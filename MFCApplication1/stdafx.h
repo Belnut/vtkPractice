@@ -86,6 +86,10 @@
 
 
 //////////
+//data Reader
+#include <vtkDICOMImageReader.h>
+
+//////////
 //widget
 #include <vtkAbstractWidget.h>
 #include <vtkAngleWidget.h>
