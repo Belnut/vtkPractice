@@ -221,12 +221,37 @@ void CMFCApplication1Dlg::ResizeVtkWindow()
 void CMFCApplication1Dlg::OnBnClickedButton1()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-	
+
+	this->vtkConeTest();
+	vtkSmartPointer<vtkDICOMImageReader> RCMreader = vtkSmartPointer<vtkDICOMImageReader>::New();
+	RCMreader->Modified();
+}
+
+
+//Dlg Frame 크기 변경 시 발생하는 이벤트
+void CMFCApplication1Dlg::OnSize(UINT nType, int cx, int cy)
+{
+	CDialogEx::OnSize(nType, cx, cy);
+
+	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
+	this->ResizeVtkWindow();
+}
+
+
+///////////////////////////////////////////////////////////
+/*
+*					vtk TEST 관련 함수
+*/
+///////////////////////////////////////////////////////////
+
+//Cone, Cylinder TEST 
+void CMFCApplication1Dlg::vtkConeTest()
+{
 	////////////////////////////////////////////////
 	//콘 생성 및 Mapper actor 연결
 	vtkSmartPointer<vtkConeSource> coneSource = vtkSmartPointer<vtkConeSource>::New();
-	vtkSmartPointer<vtkPolyDataMapper> mapper  = vtkSmartPointer<vtkPolyDataMapper>::New();
-	mapper->AddInputConnection(0, coneSource->GetOutputPort(0));
+	vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+	mapper->SetInputConnection(0, coneSource->GetOutputPort(0));
 	vtkSmartPointer<vtkActor> actor = vtkSmartPointer <vtkActor>::New();
 	actor->SetMapper(mapper);
 
@@ -239,7 +264,7 @@ void CMFCApplication1Dlg::OnBnClickedButton1()
 
 	m_vtkWindow->AddRenderer(renderer);
 	m_vtkWindow->Render();
-	
+
 	////////////////////////////////////////////////
 	//Angle Widget
 	m_angleWidget = vtkSmartPointer<vtkAngleWidget>::New();
@@ -253,22 +278,18 @@ void CMFCApplication1Dlg::OnBnClickedButton1()
 
 	vtkSmartPointer<vtkCylinderSource> cylinder = vtkSmartPointer<vtkCylinderSource>::New();
 	cylinder->SetResolution(20);
-	mapper->AddInputConnection(1, cylinder->GetOutputPort(1));
-	mapper->RemoveInputConnection(0, 0);
-	mapper->SetInputConnection(0, cylinder->GetOutputPort() );
+	//mapper->AddInputConnection(1, cylinder->GetOutputPort(1));
+	//mapper->RemoveInputConnection(0, 0);
+	//mapper->SetInputConnection(0, cylinder->GetOutputPort());
+
+	vtkSmartPointer<vtkPolyDataMapper> mapper2 = vtkSmartPointer<vtkPolyDataMapper>::New();
+	mapper2->SetInputConnection (0, cylinder->GetOutputPort() );
+	vtkSmartPointer<vtkActor> actor2 = vtkSmartPointer<vtkActor>::New();
+	actor2->SetMapper(mapper2);
+	renderer->AddActor(actor2);
 
 	actor->GetProperty()->SetColor(1, 0, 0);
 	actor->RotateX(30);
 	actor->RotateY(-45);
 	m_vtkWindow->Render();
-
-}
-
-//Dlg Frame 크기 변경 시 발생하는 이벤트
-void CMFCApplication1Dlg::OnSize(UINT nType, int cx, int cy)
-{
-	CDialogEx::OnSize(nType, cx, cy);
-
-	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
-	this->ResizeVtkWindow();
 }

@@ -45,4 +45,7 @@ public:
 	void ResizeVtkWindow();
 	afx_msg void OnBnClickedButton1();
 	afx_msg void OnSize(UINT nType, int cx, int cy);
+
+private :
+	void vtkConeTest();
 };

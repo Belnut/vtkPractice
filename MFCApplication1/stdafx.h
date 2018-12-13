@@ -84,6 +84,10 @@
 #include <vtkConeSource.h>
 #include <vtkCylinderSource.h>
 
+/////////
+//data Reader
+#include <vtkDICOMImageReader.h>
+
 
 //////////
 //widget
