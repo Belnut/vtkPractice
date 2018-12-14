@@ -211,7 +211,6 @@ void CMFCApplication1Dlg::ResizeVtkWindow()
 	m_vtkWindow->SetSize(rc.Width(), rc.Height());
 }
 
-
 //////////////////////////////////////////////////////////
 /*
 *					MFC Event
@@ -228,7 +227,6 @@ void CMFCApplication1Dlg::OnBnClickedButton1()
 	RCMreader->Modified();
 }
 
-
 //Dlg Frame 크기 변경 시 발생하는 이벤트
 void CMFCApplication1Dlg::OnSize(UINT nType, int cx, int cy)
 {
@@ -236,6 +234,48 @@ void CMFCApplication1Dlg::OnSize(UINT nType, int cx, int cy)
 
 	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
 	this->ResizeVtkWindow();
+}
+
+//VSScroll 이벤트
+void CMFCApplication1Dlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
+{
+	CSliderCtrl * Slider[2];
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	if (pScrollBar)
+	{
+		Slider[TOP] = (CSliderCtrl*)this->GetDlgItem(IDC_SLIDER_TOP);
+		Slider[BOTTOM] = (CSliderCtrl*)this->GetDlgItem(IDC_SLIDER_BOTTOM);
+
+		int _nPosTop = Slider[TOP]->GetPos();
+		int _nPosBtm = Slider[BOTTOM]->GetPos();
+
+		
+		if (pScrollBar == (CScrollBar*)Slider[TOP])
+		{
+			if (_nPosTop >= _nPosBtm)
+			{
+				Slider[TOP]->SetPos(_nPosBtm - 1);
+				_nPosTop = _nPosBtm - 1;
+			}
+			this->ChangePlaneOrigin(100 - _nPosTop, TOP);
+		}
+		
+		if (pScrollBar == (CScrollBar*)Slider[BOTTOM])
+		{	
+			if (_nPosTop >= _nPosBtm)
+			{
+				Slider[BOTTOM]->SetPos(_nPosTop + 1);
+				_nPosBtm = _nPosTop +1;
+			}
+			this->ChangePlaneOrigin(100 - _nPosBtm, BOTTOM);
+		}
+	}
+	else
+	{
+		// CScrollView를 상속받은 뷰의 경우 프래임의 스크롤롤 동작시 pScrollBar이 NULL된다.
+	}
+
+	CDialogEx::OnVScroll(nSBCode, nPos, pScrollBar);
 }
 
 
@@ -321,9 +361,14 @@ void CMFCApplication1Dlg::VtkDCMTest()
 
 	//////////////////////////////////
 	// add Plane
-	m_zPlusClipPlane = vtkSmartPointer<vtkPlane>::New();
-	m_zPlusClipPlane->SetOrigin(m_dcmExtent[1], m_dcmExtent[3], m_dcmExtent[5]);
-	m_zPlusClipPlane->SetNormal(0, 0, -1);
+	m_zTopClipPlane = vtkSmartPointer<vtkPlane>::New();
+	m_zTopClipPlane->SetOrigin(m_dcmExtent[1], m_dcmExtent[3], m_dcmExtent[5]);
+	m_zTopClipPlane->SetNormal(0, 0, -1);
+
+	m_zBtmClipPlane = vtkSmartPointer<vtkPlane>::New();
+	m_zBtmClipPlane->SetOrigin(m_dcmExtent[1], m_dcmExtent[3], m_dcmExtent[4]);
+	m_zBtmClipPlane->SetNormal(0, 0, 1);
+
 
 	////////////////////////////////////////////////////////////////
 	//ClipFilter
@@ -360,7 +405,8 @@ void CMFCApplication1Dlg::VtkDCMTest()
 	////////////////////////////////////////////////////////////////
 	//Setting clip plane;
 	m_smartV_Mapper->SetBlendModeToComposite();//이게 먼저
-	m_smartV_Mapper->AddClippingPlane(m_zPlusClipPlane);	// +Z clip
+	m_smartV_Mapper->AddClippingPlane(m_zTopClipPlane);	// +Z clip
+	m_smartV_Mapper->AddClippingPlane(m_zBtmClipPlane);	// -Z clip
 
 	////////////////////////////////////////////////////////////////
 	//Connect with Property - color and Opacity
@@ -424,17 +470,15 @@ void CMFCApplication1Dlg::SettingOrientationWidget()
 	m_orientationWidget->On();
 }
 
-
-
-
 //SetingPicking
 void CMFCApplication1Dlg::SetPicking()
 {
 	// TODO: 여기에 구현 코드 추가.
+	vtkSmartPointer<vtkPicker> partPicker = vtkSmartPointer<vtkPicker>::New();	
 
 }
 
-
+//clip용 박스 초기화
 void CMFCApplication1Dlg::SetCilpBox(double * m_dcmBounds, vtkSmartPointer<vtkRenderer> renderer)
 {
 	// TODO: 여기에 구현 코드 추가.
@@ -504,7 +548,7 @@ void CMFCApplication1Dlg::SetCilpBox(double * m_dcmBounds, vtkSmartPointer<vtkRe
 	//renderer2->SetBackground(.2, .3, .4);
 }
 
-
+//ClipSlider 초기화
 void CMFCApplication1Dlg::SetClipSlide(double z_Bound, int Range)
 {
 	// TODO: 여기에 구현 코드 추가.
@@ -512,44 +556,35 @@ void CMFCApplication1Dlg::SetClipSlide(double z_Bound, int Range)
 	topSlider = (CSliderCtrl*) this->GetDlgItem(IDC_SLIDER_TOP);
 	topSlider->SetRange(0, Range, TRUE);
 	topSlider->SetPos(0);
+
+	CSliderCtrl* btmSlider;
+	btmSlider = (CSliderCtrl*)this->GetDlgItem(IDC_SLIDER_BOTTOM);
+	btmSlider->SetRange(0, Range, TRUE);
+	btmSlider->SetPos(100);
 }
 
-
-
-void CMFCApplication1Dlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
-{
-	CSliderCtrl * topSlider;
-	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-	if (pScrollBar)
-	{
-		topSlider = (CSliderCtrl*)this->GetDlgItem(IDC_SLIDER_TOP);
-		// 어떤 슬라이더인지 검사
-		if (pScrollBar == (CScrollBar*)topSlider)
-		{
-			int _nPos = topSlider->GetPos();
-			// 슬라이더의 위치를 검사한다.
-			this->ChangePlaneOrigin(100 - _nPos);
-		}
-	}
-	else
-	{
-		// CScrollView를 상속받은 뷰의 경우 프래임의 스크롤롤 동작시 pScrollBar이 NULL된다.
-	}
-
-	CDialogEx::OnVScroll(nSBCode, nPos, pScrollBar);
-}
-
-
-void CMFCApplication1Dlg::ChangePlaneOrigin(int Pos)
+void CMFCApplication1Dlg::ChangePlaneOrigin(int Pos, PlaneLoc planeLoc)
 {
 	// TODO: 여기에 구현 코드 추가.
 
 	double zBound = m_dcmBounds[5] * ((double)Pos / m_dcmExtent[5]);
 
+	//for DeBug
 	if (Pos == 100)
 		;
 
-	m_zPlusClipPlane->SetOrigin(m_dcmOrigin[0], m_dcmOrigin[1], zBound);
+	switch (planeLoc)
+	{
+	case TOP:
+		m_zTopClipPlane->SetOrigin(m_dcmOrigin[0], m_dcmOrigin[1], zBound);
+		break;
+	case BOTTOM:
+		m_zBtmClipPlane->SetOrigin(m_dcmOrigin[0], m_dcmOrigin[1], zBound);
+		break;
+	default:
+		return;
+		break;
+	}
 
 	m_smartV_Mapper->Update();
 	m_vtkWindow->Render();

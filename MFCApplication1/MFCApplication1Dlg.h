@@ -41,12 +41,22 @@ public:
 	vtkSmartPointer<vtkOrientationMarkerWidget>		m_orientationWidget;
 	vtkSmartPointer<vtkTextWidget>					m_textWidget;
 	vtkSmartPointer<vtkDICOMImageReader>			m_DCMReader;
-	vtkSmartPointer<vtkPlane>						m_zPlusClipPlane;
 	vtkSmartPointer<vtkSmartVolumeMapper>			m_smartV_Mapper;
+
+
+	vtkSmartPointer<vtkPlane>						m_zTopClipPlane;
+	vtkSmartPointer<vtkPlane>						m_zBtmClipPlane;
 
 	double m_dcmBounds[6];
 	double m_dcmOrigin[3];
 	int m_dcmExtent[6];
+
+
+	enum PlaneLoc
+	{
+		TOP = 0,
+		BOTTOM = 1
+	};
 
 
 	void InitVtkWindow(void* hWnd);
@@ -66,5 +76,5 @@ private:
 	void SetClipSlide(double z_Bound, int Range);
 public:
 	afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
-	void ChangePlaneOrigin(int Pos);
+	void ChangePlaneOrigin(int Pos, PlaneLoc PlaneLoc);
 };
