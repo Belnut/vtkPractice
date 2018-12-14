@@ -57,8 +57,8 @@
 ////////////////////////////////////////////////////////
 //VTK 
 #include <vtkAutoInit.h>
-#define vtkRenderingCore_AUTOINIT 4(vtkRenderingOpenGL, vtkInteractionStyle, vtkRenderingFreeType, vtkRenderingContextOpenGL)
-#define vtkRenderingVolume_AUTOINIT 1(RenderingVolumeOpenGL)
+#define vtkRenderingCore_AUTOINIT 4(vtkRenderingOpenGL2, vtkInteractionStyle, vtkRenderingFreeType, vtkRenderingContextOpenGL2)
+#define vtkRenderingVolume_AUTOINIT 1(vtkRenderingVolumeOpenGL2)
 
 
 //////////
@@ -66,6 +66,7 @@
 #include <vtkSmartPointer.h>
 #include <vtkMapper.h>
 #include <vtkPolyDataMapper.h>
+#include <vtkDataSetMapper.h>
 
 #include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
@@ -88,12 +89,27 @@
 #include <vtkHexahedron.h>
 #include <vtkPlane.h>
 #include <vtkCellArray.h>
+
+#include <vtkCellArray.h>\
+#include <vtkUnstructuredGrid.h>
+#include <vtkImageData.h>
+#include <vtkClipDataSet.h>
 #include <vtkUnstructuredGrid.h>
 
 //////////
 //data Reader
 #include <vtkDICOMImageReader.h>
 
+
+//////////
+//Volume oftion(DCM)
+#include <vtkPiecewiseFunction.h>
+#include <vtkVolumeProperty.h>
+#include <vtkColorTransferFunction.h>
+
+//////////
+//Volume Standard
+#include <vtkSmartVolumeMapper.h>
 
 //////////
 //widget
@@ -103,6 +119,10 @@
 #include <vtkCaptionWidget.h>
 #include <vtkOrientationMarkerWidget.h>
 #include <vtkTextWidget.h>
+
+//////////
+//Picking
+#include <vtkVolumePicker.h>
 
 
 //////////

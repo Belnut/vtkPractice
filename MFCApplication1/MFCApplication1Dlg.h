@@ -40,6 +40,14 @@ public:
 	vtkSmartPointer<vtkCaptionWidget>				m_captionWidget;
 	vtkSmartPointer<vtkOrientationMarkerWidget>		m_orientationWidget;
 	vtkSmartPointer<vtkTextWidget>					m_textWidget;
+	vtkSmartPointer<vtkDICOMImageReader>			m_DCMReader;
+	vtkSmartPointer<vtkPlane>						m_zPlusClipPlane;
+	vtkSmartPointer<vtkSmartVolumeMapper>			m_smartV_Mapper;
+
+	double m_dcmBounds[6];
+	double m_dcmOrigin[3];
+	int m_dcmExtent[6];
+
 
 	void InitVtkWindow(void* hWnd);
 	void ResizeVtkWindow();
@@ -47,5 +55,16 @@ public:
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 
 private :
-	void vtkConeTest();
+	void VtkConeTest();
+	void VtkDCMTest();
+	void SettingOrientationWidget();
+	void SetPicking();
+public:
+	void SetCilpBox(double * m_dcmBounds, vtkSmartPointer<vtkRenderer> renderer);
+	afx_msg void OnNMCustomdrawSlider1(NMHDR *pNMHDR, LRESULT *pResult);
+private:
+	void SetClipSlide(double z_Bound, int Range);
+public:
+	afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
+	void ChangePlaneOrigin(int Pos);
 };

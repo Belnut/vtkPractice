@@ -71,6 +71,7 @@ BEGIN_MESSAGE_MAP(CMFCApplication1Dlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDC_BUTTON1, &CMFCApplication1Dlg::OnBnClickedButton1)
 	ON_WM_SIZE()
+	ON_WM_VSCROLL()
 END_MESSAGE_MAP()
 
 
@@ -222,7 +223,7 @@ void CMFCApplication1Dlg::OnBnClickedButton1()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 
-	this->vtkConeTest();
+	this->VtkDCMTest();
 	vtkSmartPointer<vtkDICOMImageReader> RCMreader = vtkSmartPointer<vtkDICOMImageReader>::New();
 	RCMreader->Modified();
 }
@@ -245,7 +246,7 @@ void CMFCApplication1Dlg::OnSize(UINT nType, int cx, int cy)
 ///////////////////////////////////////////////////////////
 
 //Cone, Cylinder TEST 
-void CMFCApplication1Dlg::vtkConeTest()
+void CMFCApplication1Dlg::VtkConeTest()
 {
 	////////////////////////////////////////////////
 	//콘 생성 및 Mapper actor 연결
@@ -274,14 +275,7 @@ void CMFCApplication1Dlg::vtkConeTest()
 
 	////////////////////////////////////////////////
 	//Orientation<arkerWidget
-	vtkSmartPointer<vtkAnnotatedCubeActor> cube = vtkSmartPointer<vtkAnnotatedCubeActor>::New();
-
-	m_orientationWidget = vtkSmartPointer<vtkOrientationMarkerWidget>::New();
-	m_orientationWidget->SetOrientationMarker(cube);
-	m_orientationWidget->SetInteractor( m_vtkWindow->GetInteractor() );
-	m_orientationWidget->SetViewport(0, 0, 0.2, 0.2);
-	m_orientationWidget->SetEnabled(TRUE);
-	m_orientationWidget->On();
+	this->SettingOrientationWidget();
 
 
 	////////////////////////////////////////////////
@@ -307,7 +301,256 @@ void CMFCApplication1Dlg::vtkConeTest()
 	height = coneSource->GetHeight();
 	radius = coneSource->GetRadius();
 	center = coneSource->GetCenter();
-	vtkSmartPointer<vtkHexahedron> clipHex = vtkSmartPointer<vtkHexahedron>::New();
-	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 
+}
+
+//dcm Test
+void CMFCApplication1Dlg::VtkDCMTest()
+{
+	//////////////////////////////////
+	// DCM READ
+	m_DCMReader = vtkSmartPointer<vtkDICOMImageReader>::New();
+	m_DCMReader->SetDirectoryName("D:/PCB_CT");
+	m_DCMReader->Update();
+
+	//////////////////////////////////
+	// DCM Info
+	m_DCMReader->GetOutput()->GetBounds(m_dcmBounds);
+	m_DCMReader->GetDataOrigin(m_dcmOrigin);
+	m_DCMReader->GetDataExtent(m_dcmExtent);
+
+	//////////////////////////////////
+	// add Plane
+	m_zPlusClipPlane = vtkSmartPointer<vtkPlane>::New();
+	m_zPlusClipPlane->SetOrigin(m_dcmExtent[1], m_dcmExtent[3], m_dcmExtent[5]);
+	m_zPlusClipPlane->SetNormal(0, 0, -1);
+
+	////////////////////////////////////////////////////////////////
+	//ClipFilter
+	//vtkSmartPointer<vtkClipDataSet> clipDataset = vtkSmartPointer<vtkClipDataSet>::New();
+	//clipDataset->SetInputConnection(dcmReader->GetOutputPort());
+	//clipDataset->SetClipFunction(m_panel);
+
+	////////////////////////////////////////////////////////////////
+	//Volume Rendering
+	vtkSmartPointer<vtkPiecewiseFunction> compositeOpacity
+		= vtkSmartPointer<vtkPiecewiseFunction>::New();
+
+	////////////////////////////////////////////////////////////////
+	//PCB
+	compositeOpacity->AddPoint(15277, 0);
+	compositeOpacity->AddPoint(21823, 1);
+
+	////////////////////////////////////////////////////////////////
+	//color setting
+	vtkSmartPointer<vtkColorTransferFunction> color
+		= vtkSmartPointer<vtkColorTransferFunction>::New();
+
+	color->AddRGBPoint(-15000, 1, 0, 0);
+	color->AddRGBPoint(-18000, 1, 0, 0);
+	color->AddRGBPoint(-22000, 0, 1, 0);
+
+	////////////////////////////////////////////////////////////////
+	//Mapper
+	m_smartV_Mapper	= vtkSmartPointer<vtkSmartVolumeMapper>::New();
+
+	//Conncet with Mapper - dcmReader
+	m_smartV_Mapper->SetInputConnection(m_DCMReader->GetOutputPort());
+
+	////////////////////////////////////////////////////////////////
+	//Setting clip plane;
+	m_smartV_Mapper->SetBlendModeToComposite();//이게 먼저
+	m_smartV_Mapper->AddClippingPlane(m_zPlusClipPlane);	// +Z clip
+
+	////////////////////////////////////////////////////////////////
+	//Connect with Property - color and Opacity
+	vtkSmartPointer<vtkVolumeProperty> volumeProperty
+		= vtkSmartPointer<vtkVolumeProperty>::New();
+
+	volumeProperty->ShadeOn();
+	volumeProperty->SetInterpolationType(VTK_LINEAR_INTERPOLATION);
+	volumeProperty->SetColor(color);
+	volumeProperty->SetScalarOpacity(compositeOpacity);
+
+	////////////////////////////////////////////////////////////////
+	//Conncet with Volume  - Mapper and Property
+	vtkSmartPointer<vtkVolume> volume
+		= vtkSmartPointer<vtkVolume> ::New();
+	volume->SetMapper(m_smartV_Mapper);
+	volume->SetProperty(volumeProperty);
+
+
+	////////////////////////////////////////////////////////////////
+	//Connect With Renderer - Volume
+	vtkSmartPointer<vtkRenderer> renderer
+		= vtkSmartPointer<vtkRenderer>::New();
+
+	renderer->AddVolume(volume);
+	renderer->SetBackground(.8, .8, .8);
+	renderer->ResetCamera();
+
+	////////////////////////////////////////////////////////////////
+	//Connect With vtkWindow - Renderer 
+	m_vtkWindow->AddRenderer(renderer);
+	this->SetCilpBox(m_dcmBounds, renderer);
+	
+	m_vtkWindow->Render();
+
+
+	///////////////////////////////////////////////////////////////
+	// another setting
+
+	SetClipSlide(m_dcmBounds[5], m_dcmExtent[5]);
+
+
+
+
+	///////////////////////////////////////////////////////////////
+	//Setting widget
+	this->SettingOrientationWidget();
+
+}
+
+//OrientationWidget Setting
+void CMFCApplication1Dlg::SettingOrientationWidget()
+{
+	vtkSmartPointer<vtkAnnotatedCubeActor> cube = vtkSmartPointer<vtkAnnotatedCubeActor>::New();
+
+	m_orientationWidget = vtkSmartPointer<vtkOrientationMarkerWidget>::New();
+	m_orientationWidget->SetOrientationMarker(cube);
+	m_orientationWidget->SetInteractor(m_vtkWindow->GetInteractor());
+	m_orientationWidget->SetViewport(0, 0, 0.2, 0.2);
+	m_orientationWidget->SetEnabled(TRUE);
+	m_orientationWidget->On();
+}
+
+
+
+
+//SetingPicking
+void CMFCApplication1Dlg::SetPicking()
+{
+	// TODO: 여기에 구현 코드 추가.
+
+}
+
+
+void CMFCApplication1Dlg::SetCilpBox(double * m_dcmBounds, vtkSmartPointer<vtkRenderer> renderer)
+{
+	// TODO: 여기에 구현 코드 추가.
+		
+	/////////////////////////////////
+	//hexahedron Setting
+	vtkSmartPointer<vtkHexahedron> clipHex = vtkSmartPointer<vtkHexahedron>::New();
+
+	//Setting 8 points
+	double P0[3] = { 0, 0, 0 };
+	double P1[3] = { m_dcmBounds[1], 0, 0 };
+	double P2[3] = { m_dcmBounds[1], m_dcmBounds[3], 0 };
+	double P3[3] = { 0, m_dcmBounds[3], 0 };
+	double P4[3] = { 0, 0, m_dcmBounds[5] };
+	double P5[3] = { m_dcmBounds[1], 0, m_dcmBounds[5] };
+	double P6[3] = { m_dcmBounds[1], m_dcmBounds[3], m_dcmBounds[5] };
+	double P7[3] = { 0, m_dcmBounds[3], m_dcmBounds[5] };
+
+	//create Points
+	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+	points->InsertNextPoint(P0);
+	points->InsertNextPoint(P1);
+	points->InsertNextPoint(P2);
+	points->InsertNextPoint(P3);
+	points->InsertNextPoint(P4);
+	points->InsertNextPoint(P5);
+	points->InsertNextPoint(P6);
+	points->InsertNextPoint(P7);
+
+	//create a hexahedon
+	clipHex->GetPointIds()->SetId(0, 0);
+	clipHex->GetPointIds()->SetId(1, 1);
+	clipHex->GetPointIds()->SetId(2, 2);
+	clipHex->GetPointIds()->SetId(3, 3);
+	clipHex->GetPointIds()->SetId(4, 4);
+	clipHex->GetPointIds()->SetId(5, 5);
+	clipHex->GetPointIds()->SetId(6, 6);
+	clipHex->GetPointIds()->SetId(7, 7);
+
+	//add hexahedron to a cell array
+	vtkSmartPointer<vtkCellArray> hexs = vtkSmartPointer<vtkCellArray>::New();
+	hexs->InsertNextCell(clipHex);
+
+	// Add the points and hexahedron to an unstructured grid
+	vtkSmartPointer<vtkUnstructuredGrid> uGrid =
+		vtkSmartPointer<vtkUnstructuredGrid>::New();
+	uGrid->SetPoints(points);
+	uGrid->InsertNextCell(clipHex->GetCellType(), clipHex->GetPointIds());
+
+	// Visualize
+	vtkSmartPointer<vtkDataSetMapper> mapper =
+		vtkSmartPointer<vtkDataSetMapper>::New();
+#if VTK_MAJOR_VERSION <= 5
+	mapper->SetInputConnection(uGrid->GetProducerPort());
+#else
+	mapper->SetInputData(uGrid);
+#endif
+
+	vtkSmartPointer<vtkActor> actor =
+		vtkSmartPointer<vtkActor>::New();
+	actor->SetMapper(mapper);
+	actor->GetProperty()->SetOpacity(0.3);
+	actor->GetProperty()->SetLineWidth(1.2);
+	actor->GetProperty()->BackfaceCullingOff();
+
+	renderer->AddActor(actor);
+	//renderer2->SetBackground(.2, .3, .4);
+}
+
+
+void CMFCApplication1Dlg::SetClipSlide(double z_Bound, int Range)
+{
+	// TODO: 여기에 구현 코드 추가.
+	CSliderCtrl* topSlider;
+	topSlider = (CSliderCtrl*) this->GetDlgItem(IDC_SLIDER_TOP);
+	topSlider->SetRange(0, Range, TRUE);
+	topSlider->SetPos(0);
+}
+
+
+
+void CMFCApplication1Dlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
+{
+	CSliderCtrl * topSlider;
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	if (pScrollBar)
+	{
+		topSlider = (CSliderCtrl*)this->GetDlgItem(IDC_SLIDER_TOP);
+		// 어떤 슬라이더인지 검사
+		if (pScrollBar == (CScrollBar*)topSlider)
+		{
+			int _nPos = topSlider->GetPos();
+			// 슬라이더의 위치를 검사한다.
+			this->ChangePlaneOrigin(100 - _nPos);
+		}
+	}
+	else
+	{
+		// CScrollView를 상속받은 뷰의 경우 프래임의 스크롤롤 동작시 pScrollBar이 NULL된다.
+	}
+
+	CDialogEx::OnVScroll(nSBCode, nPos, pScrollBar);
+}
+
+
+void CMFCApplication1Dlg::ChangePlaneOrigin(int Pos)
+{
+	// TODO: 여기에 구현 코드 추가.
+
+	double zBound = m_dcmBounds[5] * ((double)Pos / m_dcmExtent[5]);
+
+	if (Pos == 100)
+		;
+
+	m_zPlusClipPlane->SetOrigin(m_dcmOrigin[0], m_dcmOrigin[1], zBound);
+
+	m_smartV_Mapper->Update();
+	m_vtkWindow->Render();
 }
