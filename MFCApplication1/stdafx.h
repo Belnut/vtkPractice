@@ -80,14 +80,20 @@
 //////////
 //data Type
 #include <vtkPolyData.h>
-#include <vtkPlane.h>
 #include <vtkConeSource.h>
 #include <vtkCylinderSource.h>
 
+//////////
+// struct Type
+#include <vtkHexahedron.h>
+#include <vtkPlane.h>
+#include <vtkCellArray.h>
+#include <vtkUnstructuredGrid.h>
 
 //////////
 //data Reader
 #include <vtkDICOMImageReader.h>
+
 
 //////////
 //widget
@@ -98,3 +104,7 @@
 #include <vtkOrientationMarkerWidget.h>
 #include <vtkTextWidget.h>
 
+
+//////////
+//etc vtk
+#include <vtkAnnotatedCubeActor.h>

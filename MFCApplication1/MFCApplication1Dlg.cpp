@@ -267,23 +267,47 @@ void CMFCApplication1Dlg::vtkConeTest()
 
 	////////////////////////////////////////////////
 	//Angle Widget
-	m_angleWidget = vtkSmartPointer<vtkAngleWidget>::New();
-	m_angleWidget->SetInteractor(m_vtkWindow->GetInteractor());
-	m_angleWidget->On();
+	//m_angleWidget = vtkSmartPointer<vtkAngleWidget>::New();
+	//m_angleWidget->SetInteractor(m_vtkWindow->GetInteractor());
+	//m_angleWidget->On();
 
+
+	////////////////////////////////////////////////
+	//Orientation<arkerWidget
+	vtkSmartPointer<vtkAnnotatedCubeActor> cube = vtkSmartPointer<vtkAnnotatedCubeActor>::New();
+
+	m_orientationWidget = vtkSmartPointer<vtkOrientationMarkerWidget>::New();
+	m_orientationWidget->SetOrientationMarker(cube);
+	m_orientationWidget->SetInteractor( m_vtkWindow->GetInteractor() );
+	m_orientationWidget->SetViewport(0, 0, 0.2, 0.2);
+	m_orientationWidget->SetEnabled(TRUE);
+	m_orientationWidget->On();
 
 
 	////////////////////////////////////////////////
 	//Cylinder Testing
 
-	vtkSmartPointer<vtkCylinderSource> cylinder = vtkSmartPointer<vtkCylinderSource>::New();
-	cylinder->SetResolution(20);
-	mapper->AddInputConnection(1, cylinder->GetOutputPort(1));
-	mapper->RemoveInputConnection(0, 0);
-	mapper->SetInputConnection(0, cylinder->GetOutputPort());
+	//vtkSmartPointer<vtkCylinderSource> cylinder = vtkSmartPointer<vtkCylinderSource>::New();
+	//cylinder->SetResolution(20);
+	//mapper->AddInputConnection(1, cylinder->GetOutputPort(1));
+	//mapper->RemoveInputConnection(0, 0);
+	//mapper->SetInputConnection(0, cylinder->GetOutputPort());
 
-	actor->GetProperty()->SetColor(1, 0, 0);
-	actor->RotateX(30);
-	actor->RotateY(-45);
-	m_vtkWindow->Render();
+	//actor->GetProperty()->SetColor(1, 0, 0);
+	//actor->RotateX(30);
+	//actor->RotateY(-45);
+	//m_vtkWindow->Render();
+
+	////////////////////////////////////////////////
+	//Hex
+
+	double height;
+	double radius;
+	double* center;
+	height = coneSource->GetHeight();
+	radius = coneSource->GetRadius();
+	center = coneSource->GetCenter();
+	vtkSmartPointer<vtkHexahedron> clipHex = vtkSmartPointer<vtkHexahedron>::New();
+	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+
 }
