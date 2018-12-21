@@ -399,10 +399,15 @@ void CMFCApplication1Dlg::VtkDCMTest()
 	//Mapper
 	m_smartV_Mapper	= vtkSmartPointer<vtkSmartVolumeMapper>::New();
 
-	//Conncet with Mapper - dcmReader
-	m_smartV_Mapper->SetInputData(m_DCMReader->GetOutput());
+	//Conncet with Mapper - dcmReader(FullMap)
+	//m_smartV_Mapper->SetInputData(m_DCMReader->GetOutput());
+	
+	//slider
+	vtkSmartPointer<vtkImageData> originalImage = m_DCMReader->GetOutput();
+	vtkSmartPointer<vtkImageData> sliderImage = vtkSmartPointer<vtkImageData>::New();
+	this->DCMSilder(sliderImage, originalImage);
 
-
+	m_smartV_Mapper->SetInputData(sliderImage);
 
 	////////////////////////////////////////////////////////////////
 	//Setting clip plane;
@@ -672,10 +677,47 @@ void CMFCApplication1Dlg::ChangePlaneOrigin(int Pos, PlaneLoc planeLoc)
 }
 
 
-void CMFCApplication1Dlg::DCMSilder()
+// slider 함수
+void CMFCApplication1Dlg::DCMSilder(vtkSmartPointer<vtkImageData> slider, vtkSmartPointer<vtkImageData> origin )
 {
-	m_DCMReader->GetOutput()->GetScalarPointer();
 	
+	vtkSmartPointer<vtkInformation> originInfo = origin->GetInformation();
+
+	//크기 이미지 먼저 계산할것
+	//Extent x * y * z
+	//
+	slider->SetOrigin(0,0,0);
+	//잘라낼 크기 설정
+	slider->SetDimensions(100, 100, 100);
+	//slider 이미지 버퍼 설정
+	slider->AllocateScalars(VTK_SHORT, 1);
+
+	void* imageOrign = origin->GetScalarPointer();
+	void* copyBuffer = slider->GetScalarPointer();
+
+	unsigned char* originImgData = (unsigned char*)imageOrign;
+	unsigned char* copyImgData = (unsigned char*)copyBuffer;
+
+	int originType = origin->GetScalarType();
+	unsigned long originSize = origin->GetActualMemorySize();
+	int copysize = slider->GetActualMemorySize();
+	//image 위치에 따른 OffSet 설정
+	int imgOffSetX = (1024 - 100);
+	int imgOffSetY = ((1024 - 100) / 2) * 2048;
+	
+	// Z
+	for (int z = 0; z < 100; z++)
+	{
+		unsigned char* oneImageOrigin = originImgData + (1024 * 2) * 1024 * z;
+		oneImageOrigin += imgOffSetX + imgOffSetY;
+		for (int y = 0; y < 100; y++)
+		{
+			memcpy(copyImgData, oneImageOrigin, 200);
+			copyImgData += 200;
+			oneImageOrigin += 2048;
+		}		
+	}
+
 	//imgData->GetScalarPointer();
 	//imgData->SetDimensions;
 	//imgData->SetExtent;

@@ -138,3 +138,4 @@
 //////////
 //etc vtk
 #include <vtkAnnotatedCubeActor.h>
+#include <vtkInformation.h>
