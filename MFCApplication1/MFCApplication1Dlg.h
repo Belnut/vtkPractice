@@ -77,4 +77,5 @@ private:
 public:
 	afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 	void ChangePlaneOrigin(int Pos, PlaneLoc PlaneLoc);
+	void DCMSilder();
 };

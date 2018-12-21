@@ -82,7 +82,9 @@
 //data Type
 #include <vtkPolyData.h>
 #include <vtkConeSource.h>
+#include <vtkCubeSource.h>
 #include <vtkCylinderSource.h>
+
 
 //////////
 // struct Type
@@ -90,11 +92,19 @@
 #include <vtkPlane.h>
 #include <vtkCellArray.h>
 
-#include <vtkCellArray.h>\
+#include <vtkCellArray.h>
 #include <vtkUnstructuredGrid.h>
 #include <vtkImageData.h>
 #include <vtkClipDataSet.h>
 #include <vtkUnstructuredGrid.h>
+
+#include <vtkPolyDataNormals.h>
+
+//////////
+//Filter
+#include <vtkOutlineFilter.h>
+#include <vtkExtractEdges.h>
+#include <vtkGeometryFilter.h>
 
 //////////
 //data Reader
@@ -123,7 +133,7 @@
 //////////
 //Picking
 #include <vtkVolumePicker.h>
-
+#include <vtkCellPicker.h>
 
 //////////
 //etc vtk

@@ -400,7 +400,9 @@ void CMFCApplication1Dlg::VtkDCMTest()
 	m_smartV_Mapper	= vtkSmartPointer<vtkSmartVolumeMapper>::New();
 
 	//Conncet with Mapper - dcmReader
-	m_smartV_Mapper->SetInputConnection(m_DCMReader->GetOutputPort());
+	m_smartV_Mapper->SetInputData(m_DCMReader->GetOutput());
+
+
 
 	////////////////////////////////////////////////////////////////
 	//Setting clip plane;
@@ -445,7 +447,6 @@ void CMFCApplication1Dlg::VtkDCMTest()
 
 	///////////////////////////////////////////////////////////////
 	// another setting
-
 	SetClipSlide(m_dcmBounds[5], m_dcmExtent[5]);
 
 
@@ -474,9 +475,13 @@ void CMFCApplication1Dlg::SettingOrientationWidget()
 void CMFCApplication1Dlg::SetPicking()
 {
 	// TODO: 여기에 구현 코드 추가.
-	vtkSmartPointer<vtkPicker> partPicker = vtkSmartPointer<vtkPicker>::New();	
+	vtkSmartPointer<vtkCellPicker> partPicker = vtkSmartPointer<vtkCellPicker>::New();
+
+//	partPicker->AddObserver();
 
 }
+
+
 
 //clip용 박스 초기화
 void CMFCApplication1Dlg::SetCilpBox(double * m_dcmBounds, vtkSmartPointer<vtkRenderer> renderer)
@@ -485,67 +490,143 @@ void CMFCApplication1Dlg::SetCilpBox(double * m_dcmBounds, vtkSmartPointer<vtkRe
 		
 	/////////////////////////////////
 	//hexahedron Setting
-	vtkSmartPointer<vtkHexahedron> clipHex = vtkSmartPointer<vtkHexahedron>::New();
+//	vtkSmartPointer<vtkHexahedron> clipHex = vtkSmartPointer<vtkHexahedron>::New();
+//
+//	//Setting 8 points
+//	double P0[3] = { 0, 0, 0 };
+//	double P1[3] = { m_dcmBounds[1], 0, 0 };
+//	double P2[3] = { m_dcmBounds[1], m_dcmBounds[3], 0 };
+//	double P3[3] = { 0, m_dcmBounds[3], 0 };
+//	double P4[3] = { 0, 0, m_dcmBounds[5] };
+//	double P5[3] = { m_dcmBounds[1], 0, m_dcmBounds[5] };
+//	double P6[3] = { m_dcmBounds[1], m_dcmBounds[3], m_dcmBounds[5] };
+//	double P7[3] = { 0, m_dcmBounds[3], m_dcmBounds[5] };
+//
+//	//create Points
+//	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+//	points->InsertNextPoint(P0);
+//	points->InsertNextPoint(P1);
+//	points->InsertNextPoint(P2);
+//	points->InsertNextPoint(P3);
+//	points->InsertNextPoint(P4);
+//	points->InsertNextPoint(P5);
+//	points->InsertNextPoint(P6);
+//	points->InsertNextPoint(P7);
+//
+//	//create a hexahedon
+//	clipHex->GetPointIds()->SetId(0, 0);
+//	clipHex->GetPointIds()->SetId(1, 1);
+//	clipHex->GetPointIds()->SetId(2, 2);
+//	clipHex->GetPointIds()->SetId(3, 3);
+//	clipHex->GetPointIds()->SetId(4, 4);
+//	clipHex->GetPointIds()->SetId(5, 5);
+//	clipHex->GetPointIds()->SetId(6, 6);
+//	clipHex->GetPointIds()->SetId(7, 7);
+//
+//	//add hexahedron to a cell array
+//	vtkSmartPointer<vtkCellArray> hexs = vtkSmartPointer<vtkCellArray>::New();
+//	hexs->InsertNextCell(clipHex);
+//
+//	// Add the points and hexahedron to an unstructured grid
+//	vtkSmartPointer<vtkUnstructuredGrid> uGrid =
+//		vtkSmartPointer<vtkUnstructuredGrid>::New();
+//	uGrid->SetPoints(points);
+//	uGrid->InsertNextCell(clipHex->GetCellType(), clipHex->GetPointIds());
+//
+//	// Visualize
+//	vtkSmartPointer<vtkDataSetMapper> mapper =
+//		vtkSmartPointer<vtkDataSetMapper>::New();
+//#if VTK_MAJOR_VERSION <= 5
+//	mapper->SetInputConnection(uGrid->GetProducerPort());
+//#else
+//	mapper->SetInputData(uGrid);
+//#endif
+//
+//	vtkSmartPointer<vtkActor> actor =
+//		vtkSmartPointer<vtkActor>::New();
+//	actor->SetMapper(mapper);
+//	actor->GetProperty()->SetOpacity(0.3);
+//	actor->GetProperty()->SetLineWidth(1.2);
+//	actor->GetProperty()->BackfaceCullingOff();
+//
+//	renderer->AddActor(actor);
+//
+//	//outline actor 추가
+//	//////////////////////////////////////////////////
+//	//PolyData 전용
+//	//vtkSmartPointer<vtkPolyDataNormals> outlineNomal =
+//	//	vtkSmartPointer<vtkPolyDataNormals>::New();
+//	//outlineNomal->SetInputData(uGrid);
+//	//
+//	//vtkSmartPointer<vtkOutlineFilter> outlineFilter =
+//	//	vtkSmartPointer<vtkOutlineFilter>::New();
+//	//outlineFilter->SetInputData(outlineNomal->GetOutput());
+//	/////////////////////////////////////////////////////
+//
+//	vtkSmartPointer<vtkGeometryFilter> geoFilter =
+//		vtkSmartPointer<vtkGeometryFilter>::New();
+//	geoFilter->SetInputData(uGrid);
+//
+//	vtkSmartPointer<vtkExtractEdges> edgesFilter =
+//		vtkSmartPointer<vtkExtractEdges>::New();
+//
+//	edgesFilter->SetInputData(geoFilter->GetOutput());
+//
+//	vtkSmartPointer<vtkPolyDataMapper> outlineMapper =
+//		vtkSmartPointer<vtkPolyDataMapper>::New();
+//	outlineMapper->SetInputData(outlineFilter->GetOutput());
+//
+//	vtkSmartPointer<vtkActor> outlineActor =
+//		vtkSmartPointer<vtkActor>::New();
+//
+//	outlineActor->GetProperty()->SetColor(0, 0, 0);
+//
+//	renderer->AddActor(outlineActor);
 
-	//Setting 8 points
-	double P0[3] = { 0, 0, 0 };
-	double P1[3] = { m_dcmBounds[1], 0, 0 };
-	double P2[3] = { m_dcmBounds[1], m_dcmBounds[3], 0 };
-	double P3[3] = { 0, m_dcmBounds[3], 0 };
-	double P4[3] = { 0, 0, m_dcmBounds[5] };
-	double P5[3] = { m_dcmBounds[1], 0, m_dcmBounds[5] };
-	double P6[3] = { m_dcmBounds[1], m_dcmBounds[3], m_dcmBounds[5] };
-	double P7[3] = { 0, m_dcmBounds[3], m_dcmBounds[5] };
+	vtkSmartPointer<vtkCubeSource> clipCube 
+		= vtkSmartPointer<vtkCubeSource>::New();
 
-	//create Points
-	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-	points->InsertNextPoint(P0);
-	points->InsertNextPoint(P1);
-	points->InsertNextPoint(P2);
-	points->InsertNextPoint(P3);
-	points->InsertNextPoint(P4);
-	points->InsertNextPoint(P5);
-	points->InsertNextPoint(P6);
-	points->InsertNextPoint(P7);
+	clipCube->SetCenter(m_dcmOrigin);
+	clipCube->SetBounds(m_dcmBounds);
+	clipCube->Update();
 
-	//create a hexahedon
-	clipHex->GetPointIds()->SetId(0, 0);
-	clipHex->GetPointIds()->SetId(1, 1);
-	clipHex->GetPointIds()->SetId(2, 2);
-	clipHex->GetPointIds()->SetId(3, 3);
-	clipHex->GetPointIds()->SetId(4, 4);
-	clipHex->GetPointIds()->SetId(5, 5);
-	clipHex->GetPointIds()->SetId(6, 6);
-	clipHex->GetPointIds()->SetId(7, 7);
+	///////////////////////////////////////////////////
+	//PolyData Outline 생성
+	vtkSmartPointer<vtkPolyDataNormals> outlineNomal =
+		vtkSmartPointer<vtkPolyDataNormals>::New();
+	outlineNomal->SetInputConnection(clipCube->GetOutputPort());
+	
+	vtkSmartPointer<vtkOutlineFilter> outlineFilter =
+		vtkSmartPointer<vtkOutlineFilter>::New();
+	outlineFilter->SetInputConnection(outlineNomal->GetOutputPort());
+	
+	vtkSmartPointer<vtkPolyDataMapper> outlineMapper =
+		vtkSmartPointer<vtkPolyDataMapper>::New();
+	outlineMapper->SetInputConnection(outlineFilter->GetOutputPort());
+		
+	vtkSmartPointer<vtkActor> outlineActor =
+	vtkSmartPointer<vtkActor>::New();
+	
+	outlineActor->SetMapper(outlineMapper);
+	outlineActor->GetProperty()->SetColor(0, 0, 0);
+	//////////////////////////////////////////////////
 
-	//add hexahedron to a cell array
-	vtkSmartPointer<vtkCellArray> hexs = vtkSmartPointer<vtkCellArray>::New();
-	hexs->InsertNextCell(clipHex);
+	//////////////////////////////////////////////////
+	//Cube Actor
+	vtkSmartPointer<vtkPolyDataMapper> cubeMapper
+		= vtkSmartPointer<vtkPolyDataMapper>::New();
+	cubeMapper->SetInputConnection(clipCube->GetOutputPort());
 
-	// Add the points and hexahedron to an unstructured grid
-	vtkSmartPointer<vtkUnstructuredGrid> uGrid =
-		vtkSmartPointer<vtkUnstructuredGrid>::New();
-	uGrid->SetPoints(points);
-	uGrid->InsertNextCell(clipHex->GetCellType(), clipHex->GetPointIds());
-
-	// Visualize
-	vtkSmartPointer<vtkDataSetMapper> mapper =
-		vtkSmartPointer<vtkDataSetMapper>::New();
-#if VTK_MAJOR_VERSION <= 5
-	mapper->SetInputConnection(uGrid->GetProducerPort());
-#else
-	mapper->SetInputData(uGrid);
-#endif
-
-	vtkSmartPointer<vtkActor> actor =
+	vtkSmartPointer<vtkActor> cubeActor =
 		vtkSmartPointer<vtkActor>::New();
-	actor->SetMapper(mapper);
-	actor->GetProperty()->SetOpacity(0.3);
-	actor->GetProperty()->SetLineWidth(1.2);
-	actor->GetProperty()->BackfaceCullingOff();
+	cubeActor->SetMapper(cubeMapper);
+	cubeActor->GetProperty()->SetOpacity(0.3);
+	cubeActor->GetProperty()->SetColor(1, 1, 0);
+	cubeActor->GetProperty()->BackfaceCullingOff();
+	
 
-	renderer->AddActor(actor);
-	//renderer2->SetBackground(.2, .3, .4);
+	renderer->AddActor(cubeActor);
+	renderer->AddActor(outlineActor);
 }
 
 //ClipSlider 초기화
@@ -562,7 +643,7 @@ void CMFCApplication1Dlg::SetClipSlide(double z_Bound, int Range)
 	btmSlider->SetRange(0, Range, TRUE);
 	btmSlider->SetPos(100);
 }
-
+//Clip용 Plane 위치 변경
 void CMFCApplication1Dlg::ChangePlaneOrigin(int Pos, PlaneLoc planeLoc)
 {
 	// TODO: 여기에 구현 코드 추가.
@@ -588,4 +669,17 @@ void CMFCApplication1Dlg::ChangePlaneOrigin(int Pos, PlaneLoc planeLoc)
 
 	m_smartV_Mapper->Update();
 	m_vtkWindow->Render();
+}
+
+
+void CMFCApplication1Dlg::DCMSilder()
+{
+	m_DCMReader->GetOutput()->GetScalarPointer();
+	
+	//imgData->GetScalarPointer();
+	//imgData->SetDimensions;
+	//imgData->SetExtent;
+	//imgData->SetOrigin;
+	//imgData->SetInformation;
+	//imgData->AllocateScalars
 }
