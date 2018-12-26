@@ -99,7 +99,7 @@
 #include <vtkUnstructuredGrid.h>
 
 #include <vtkPolyDataNormals.h>
-
+#include <vtkStringArray.h>
 //////////
 //Filter
 #include <vtkOutlineFilter.h>
@@ -109,7 +109,9 @@
 //////////
 //data Reader
 #include <vtkDICOMImageReader.h>
+#include <vtkTIFFReader.h>
 
+#include <vtkTIFFWriter.h>
 
 //////////
 //Volume oftion(DCM)

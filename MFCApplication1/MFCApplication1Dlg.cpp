@@ -1,4 +1,5 @@
 ﻿
+
 // MFCApplication1Dlg.cpp: 구현 파일
 //
 
@@ -6,12 +7,17 @@
 #include "MFCApplication1.h"
 #include "MFCApplication1Dlg.h"
 #include "afxdialogex.h"
+#include "vtkCTIFFImageReader.h"
 
 #include <vtkCaptionActor2D.h>
 #include <vtkTextActor.h>
 #include <vtkTextProperty.h>
 #include <vtkAnnotatedCubeActor.h>
+#include <vtktiff/tiffio.h>
+#include <vtkDirectory.h>
 
+#include <vector>
+#include <string>
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -225,6 +231,9 @@ void CMFCApplication1Dlg::OnBnClickedButton1()
 	this->VtkDCMTest();
 	vtkSmartPointer<vtkDICOMImageReader> RCMreader = vtkSmartPointer<vtkDICOMImageReader>::New();
 	RCMreader->Modified();
+
+	this->TIFFReader();
+
 }
 
 //Dlg Frame 크기 변경 시 발생하는 이벤트
@@ -486,108 +495,10 @@ void CMFCApplication1Dlg::SetPicking()
 
 }
 
-
-
 //clip용 박스 초기화
 void CMFCApplication1Dlg::SetCilpBox(double * m_dcmBounds, vtkSmartPointer<vtkRenderer> renderer)
 {
 	// TODO: 여기에 구현 코드 추가.
-		
-	/////////////////////////////////
-	//hexahedron Setting
-//	vtkSmartPointer<vtkHexahedron> clipHex = vtkSmartPointer<vtkHexahedron>::New();
-//
-//	//Setting 8 points
-//	double P0[3] = { 0, 0, 0 };
-//	double P1[3] = { m_dcmBounds[1], 0, 0 };
-//	double P2[3] = { m_dcmBounds[1], m_dcmBounds[3], 0 };
-//	double P3[3] = { 0, m_dcmBounds[3], 0 };
-//	double P4[3] = { 0, 0, m_dcmBounds[5] };
-//	double P5[3] = { m_dcmBounds[1], 0, m_dcmBounds[5] };
-//	double P6[3] = { m_dcmBounds[1], m_dcmBounds[3], m_dcmBounds[5] };
-//	double P7[3] = { 0, m_dcmBounds[3], m_dcmBounds[5] };
-//
-//	//create Points
-//	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-//	points->InsertNextPoint(P0);
-//	points->InsertNextPoint(P1);
-//	points->InsertNextPoint(P2);
-//	points->InsertNextPoint(P3);
-//	points->InsertNextPoint(P4);
-//	points->InsertNextPoint(P5);
-//	points->InsertNextPoint(P6);
-//	points->InsertNextPoint(P7);
-//
-//	//create a hexahedon
-//	clipHex->GetPointIds()->SetId(0, 0);
-//	clipHex->GetPointIds()->SetId(1, 1);
-//	clipHex->GetPointIds()->SetId(2, 2);
-//	clipHex->GetPointIds()->SetId(3, 3);
-//	clipHex->GetPointIds()->SetId(4, 4);
-//	clipHex->GetPointIds()->SetId(5, 5);
-//	clipHex->GetPointIds()->SetId(6, 6);
-//	clipHex->GetPointIds()->SetId(7, 7);
-//
-//	//add hexahedron to a cell array
-//	vtkSmartPointer<vtkCellArray> hexs = vtkSmartPointer<vtkCellArray>::New();
-//	hexs->InsertNextCell(clipHex);
-//
-//	// Add the points and hexahedron to an unstructured grid
-//	vtkSmartPointer<vtkUnstructuredGrid> uGrid =
-//		vtkSmartPointer<vtkUnstructuredGrid>::New();
-//	uGrid->SetPoints(points);
-//	uGrid->InsertNextCell(clipHex->GetCellType(), clipHex->GetPointIds());
-//
-//	// Visualize
-//	vtkSmartPointer<vtkDataSetMapper> mapper =
-//		vtkSmartPointer<vtkDataSetMapper>::New();
-//#if VTK_MAJOR_VERSION <= 5
-//	mapper->SetInputConnection(uGrid->GetProducerPort());
-//#else
-//	mapper->SetInputData(uGrid);
-//#endif
-//
-//	vtkSmartPointer<vtkActor> actor =
-//		vtkSmartPointer<vtkActor>::New();
-//	actor->SetMapper(mapper);
-//	actor->GetProperty()->SetOpacity(0.3);
-//	actor->GetProperty()->SetLineWidth(1.2);
-//	actor->GetProperty()->BackfaceCullingOff();
-//
-//	renderer->AddActor(actor);
-//
-//	//outline actor 추가
-//	//////////////////////////////////////////////////
-//	//PolyData 전용
-//	//vtkSmartPointer<vtkPolyDataNormals> outlineNomal =
-//	//	vtkSmartPointer<vtkPolyDataNormals>::New();
-//	//outlineNomal->SetInputData(uGrid);
-//	//
-//	//vtkSmartPointer<vtkOutlineFilter> outlineFilter =
-//	//	vtkSmartPointer<vtkOutlineFilter>::New();
-//	//outlineFilter->SetInputData(outlineNomal->GetOutput());
-//	/////////////////////////////////////////////////////
-//
-//	vtkSmartPointer<vtkGeometryFilter> geoFilter =
-//		vtkSmartPointer<vtkGeometryFilter>::New();
-//	geoFilter->SetInputData(uGrid);
-//
-//	vtkSmartPointer<vtkExtractEdges> edgesFilter =
-//		vtkSmartPointer<vtkExtractEdges>::New();
-//
-//	edgesFilter->SetInputData(geoFilter->GetOutput());
-//
-//	vtkSmartPointer<vtkPolyDataMapper> outlineMapper =
-//		vtkSmartPointer<vtkPolyDataMapper>::New();
-//	outlineMapper->SetInputData(outlineFilter->GetOutput());
-//
-//	vtkSmartPointer<vtkActor> outlineActor =
-//		vtkSmartPointer<vtkActor>::New();
-//
-//	outlineActor->GetProperty()->SetColor(0, 0, 0);
-//
-//	renderer->AddActor(outlineActor);
-
 	vtkSmartPointer<vtkCubeSource> clipCube 
 		= vtkSmartPointer<vtkCubeSource>::New();
 
@@ -648,6 +559,7 @@ void CMFCApplication1Dlg::SetClipSlide(double z_Bound, int Range)
 	btmSlider->SetRange(0, Range, TRUE);
 	btmSlider->SetPos(100);
 }
+
 //Clip용 Plane 위치 변경
 void CMFCApplication1Dlg::ChangePlaneOrigin(int Pos, PlaneLoc planeLoc)
 {
@@ -675,7 +587,6 @@ void CMFCApplication1Dlg::ChangePlaneOrigin(int Pos, PlaneLoc planeLoc)
 	m_smartV_Mapper->Update();
 	m_vtkWindow->Render();
 }
-
 
 // slider 함수
 void CMFCApplication1Dlg::DCMSilder(vtkSmartPointer<vtkImageData> slider, vtkSmartPointer<vtkImageData> origin )
@@ -724,4 +635,125 @@ void CMFCApplication1Dlg::DCMSilder(vtkSmartPointer<vtkImageData> slider, vtkSma
 	//imgData->SetOrigin;
 	//imgData->SetInformation;
 	//imgData->AllocateScalars
+}
+
+// TIFF Reader
+void CMFCApplication1Dlg::TIFFReader()
+{
+	//vtkSmartPointer<vtkCTIFFImageReader> CTIFFReader = vtkSmartPointer<vtkCTIFFImageReader>::New();
+	//CTIFFReader->SetDirectoryName("D:/PCB_CT_TIFF");
+	////CTIFFReader->SetFileName("D:/PCB_CT_TIFF/whj_0451.tiff");
+	//
+	//CTIFFReader->Update();
+
+	//vtkSmartPointer<vtkStringArray> array = vtkSmartPointer<vtkStringArray>::New();
+	////array->
+
+	//vtkSmartPointer<vtkTIFFReader> TIFFReader = vtkSmartPointer<vtkTIFFReader>::New();
+	//TIFFReader->SetFileName("D:/PCB_CT_TIFF/whj_0451.tiff");
+	//TIFFReader->Update();
+	//
+	//vtkSmartPointer<vtkTIFFReader> TIFFWriter = vtkSmartPointer<vtkTIFFReader>::New();
+	////TIFFReader->SetFileNames();
+
+	vtkSmartPointer<vtkImageData> buffer = vtkSmartPointer<vtkImageData>::New();
+	vtkSmartPointer<vtkImageData> slider = vtkSmartPointer<vtkImageData>::New();
+	vtkSmartPointer<vtkTIFFReader> reader = vtkSmartPointer<vtkTIFFReader>::New();
+
+	char DirectoryName[] = "D:/PCB_CT_TIFF";
+	std::vector<std::string> * TIFFFileNames = new std::vector<std::string>;
+	if (DirectoryName)
+	{
+		vtkDirectory* dir = vtkDirectory::New();
+		int opened = dir->Open(DirectoryName);
+		if (!opened)
+		{
+			dir->Delete();
+			return;
+		}
+		vtkIdType numFiles = dir->GetNumberOfFiles();
+
+		TIFFFileNames->clear();
+		//this->AppHelper->Clear();
+
+		for (vtkIdType i = 0; i < numFiles; i++)
+		{
+			if (strcmp(dir->GetFile(i), ".") == 0 ||
+				strcmp(dir->GetFile(i), "..") == 0)
+			{
+				continue;
+			}
+
+			std::string fileString = DirectoryName;
+			fileString += "/";
+			fileString += dir->GetFile(i);
+
+			//int val = this->CanReadFile(fileString.c_str());
+
+			//open 확인시 TURE = 3 FALSE = 0 리턴;
+			//if (val == 3)
+			//{
+			//	vtkDebugMacro(<< "Adding " << fileString.c_str() << " to DICOMFileNames.");
+			TIFFFileNames->push_back(fileString);
+			//}
+			//else
+			//{
+			//	vtkDebugMacro(<< fileString.c_str() << " - DICOMParser CanReadFile returned : " << val);
+			//}
+
+		}
+		std::vector<std::string>::iterator iter;
+		std::vector<std::pair<float, std::string> > sortedFiles;
+	}
+
+
+
+	
+	buffer->SetOrigin(0, 0, 0);
+	//잘라낼 크기 설정
+	buffer->SetDimensions(1024, 1024, 100);
+	//slider 이미지 버퍼 설정
+	buffer->AllocateScalars(VTK_SHORT, 1);
+
+
+
+	slider->SetOrigin(0, 0, 0);
+	//잘라낼 크기 설정
+	slider->SetDimensions(1024, 1024, 100);
+	//slider 이미지 버퍼 설정
+	slider->AllocateScalars(VTK_SHORT, 1);
+
+	std::vector<std::string>::iterator fiter;
+
+	int count = 0;
+	vtkIdType numFiles = static_cast<int>( TIFFFileNames->size() );
+
+	void* MainStack = buffer->GetScalarPointer();
+
+	unsigned char* MainStackData = (unsigned char*)MainStack;
+
+	//디버그 return 확인용
+	int originType = buffer->GetScalarType();
+	unsigned long originSize = buffer->GetActualMemorySize();
+	//int copysize = slider->GetActualMemorySize();
+
+
+	//image 위치에 따른 OffSet 설정
+	int imgOffSetX = 2048;
+	int imgOffSetY = 1024;
+
+
+
+	for (fiter = TIFFFileNames->begin();
+		fiter != TIFFFileNames->end();
+		++fiter)
+	{
+		reader->SetFileName(fiter->c_str());
+		reader->Update();
+		unsigned char* src = (unsigned char*) reader->GetOutput();
+		memcpy(MainStackData, src, imgOffSetX * imgOffSetY);
+		MainStackData += (imgOffSetX * imgOffSetY);
+	}
+
+	
 }
