@@ -74,17 +74,20 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkProperty.h>
 
+#include <vtkActor2D.h>
+#include <vtkImageViewer2.h>
+
 //////////
 //Camera
 #include <vtkInteractorStyleTrackballCamera.h>
-
+#include <vtkInteractorStyleJoystickCamera.h>
 //////////
 //data Type
 #include <vtkPolyData.h>
 #include <vtkConeSource.h>
 #include <vtkCubeSource.h>
 #include <vtkCylinderSource.h>
-
+#include <vtkImageShiftScale.h>
 
 //////////
 // struct Type
@@ -122,6 +125,9 @@
 //////////
 //Volume Standard
 #include <vtkSmartVolumeMapper.h>
+#include<vtkMapper2D.h>
+#include<vtkPolyDataMapper2D.h>
+#include <vtkGPUVolumeRayCastMapper.h>
 
 //////////
 //widget
@@ -133,7 +139,7 @@
 #include <vtkTextWidget.h>
 
 //////////
-//Picking
+//Picking0
 #include <vtkVolumePicker.h>
 #include <vtkCellPicker.h>
 
@@ -141,3 +147,4 @@
 //etc vtk
 #include <vtkAnnotatedCubeActor.h>
 #include <vtkInformation.h>
+#include <vtkImageImport.h>

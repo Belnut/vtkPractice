@@ -44,6 +44,12 @@ public:
 	vtkSmartPointer<vtkSmartVolumeMapper>			m_smartV_Mapper;
 
 
+	//TestObject;
+	vtkCubeSource*				m_vtkTestCubeSource = NULL;
+	vtkPolyDataMapper*			m_vtkTestPolyDataMapper = NULL;
+	vtkActor*					m_vtkTestActor = NULL;
+
+
 	vtkSmartPointer<vtkPlane>						m_zTopClipPlane;
 	vtkSmartPointer<vtkPlane>						m_zBtmClipPlane;
 
@@ -66,6 +72,8 @@ public:
 
 private :
 	void VtkConeTest();
+	void VtkCubeTest();
+	void SmartVtkCubeTest();
 	void VtkDCMTest();
 	void SettingOrientationWidget();
 	void SetPicking();
@@ -78,5 +86,9 @@ public:
 	afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 	void ChangePlaneOrigin(int Pos, PlaneLoc PlaneLoc);
 	void DCMSilder(vtkSmartPointer<vtkImageData> slider, vtkSmartPointer<vtkImageData> origin);
-	void TIFFReader();
+	vtkSmartPointer<vtkImageData> TIFFReader();
+	vtkSmartPointer<vtkImageData> TIFFReaderOpenCV();
+	vtkSmartPointer<vtkImageImport> TIFFReaderOpenCVImport();
+	void convertDICOMToTIFF();
+	afx_msg void OnNMCustomdrawSliderBottom(NMHDR *pNMHDR, LRESULT *pResult);
 };

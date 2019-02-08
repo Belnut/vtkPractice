@@ -16,8 +16,13 @@
 #include <vtktiff/tiffio.h>
 #include <vtkDirectory.h>
 
+#include <vtkImageImport.h>
+
 #include <vector>
 #include <string>
+
+#include <opencv2/opencv.hpp>
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -78,6 +83,7 @@ BEGIN_MESSAGE_MAP(CMFCApplication1Dlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON1, &CMFCApplication1Dlg::OnBnClickedButton1)
 	ON_WM_SIZE()
 	ON_WM_VSCROLL()
+	ON_NOTIFY(NM_CUSTOMDRAW, IDC_SLIDER_BOTTOM, &CMFCApplication1Dlg::OnNMCustomdrawSliderBottom)
 END_MESSAGE_MAP()
 
 
@@ -207,6 +213,7 @@ void CMFCApplication1Dlg::InitVtkWindow(void* hWnd)
 	}
 }
 
+
 //설정한 FRAME에 맞게 사이즈가 조절됨
 //this->Onsize()가 호출, 프래임을 바꿀시 hWnd 변경할 것
 void CMFCApplication1Dlg::ResizeVtkWindow()
@@ -227,13 +234,22 @@ void CMFCApplication1Dlg::ResizeVtkWindow()
 void CMFCApplication1Dlg::OnBnClickedButton1()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	clock_t start, end;
+	double result;
+
+	start = clock();
 
 	this->VtkDCMTest();
-	vtkSmartPointer<vtkDICOMImageReader> RCMreader = vtkSmartPointer<vtkDICOMImageReader>::New();
-	RCMreader->Modified();
+	
+	end = clock();
+	result = (double)(end - start);
+	CEditView *view = (CEditView *)this->GetDlgItem(IDC_EDIT1);
+	
+	CString str;
+	str.Format(_T("%f"), result);
 
-	this->TIFFReader();
-
+	view->SetWindowTextW(str);
+	//this->convertDICOMToTIFF();
 }
 
 //Dlg Frame 크기 변경 시 발생하는 이벤트
@@ -329,13 +345,11 @@ void CMFCApplication1Dlg::VtkConeTest()
 
 	////////////////////////////////////////////////
 	//Cylinder Testing
-
 	//vtkSmartPointer<vtkCylinderSource> cylinder = vtkSmartPointer<vtkCylinderSource>::New();
 	//cylinder->SetResolution(20);
 	//mapper->AddInputConnection(1, cylinder->GetOutputPort(1));
 	//mapper->RemoveInputConnection(0, 0);
 	//mapper->SetInputConnection(0, cylinder->GetOutputPort());
-
 	//actor->GetProperty()->SetColor(1, 0, 0);
 	//actor->RotateX(30);
 	//actor->RotateY(-45);
@@ -351,6 +365,74 @@ void CMFCApplication1Dlg::VtkConeTest()
 	radius = coneSource->GetRadius();
 	center = coneSource->GetCenter();
 
+}
+
+//Cube Test
+void CMFCApplication1Dlg::VtkCubeTest()
+{
+	if (m_vtkTestCubeSource == NULL)
+		m_vtkTestCubeSource = vtkCubeSource::New();
+	else
+		return ;
+
+	m_vtkTestCubeSource->SetXLength(10);
+	m_vtkTestCubeSource->SetYLength(10);
+	m_vtkTestCubeSource->SetZLength(10);
+	m_vtkTestCubeSource->SetCenter(0, 0, 0);
+	m_vtkTestCubeSource->Update();
+
+	m_vtkTestPolyDataMapper = vtkPolyDataMapper::New();
+	m_vtkTestPolyDataMapper->SetInputData(m_vtkTestCubeSource->GetOutput());
+
+
+	m_vtkTestActor = vtkActor::New();
+	m_vtkTestActor->SetMapper(m_vtkTestPolyDataMapper);
+
+	vtkRenderer* renderer = vtkRenderer::New();
+	renderer->AddActor(m_vtkTestActor);
+	renderer->SetBackground(.1, .1, .1);
+	renderer->ResetCamera();
+
+	m_vtkWindow->AddRenderer(renderer);
+	m_vtkWindow->Render();
+}
+
+void CMFCApplication1Dlg::SmartVtkCubeTest()
+{
+	//TODO : smartPointer 실험
+	vtkSmartPointer< vtkCubeSource> vtkTestCubeSource = vtkSmartPointer<vtkCubeSource>::New();
+	vtkSmartPointer< vtkPolyDataMapper> vtkTestPolyDataMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+	vtkSmartPointer< vtkActor> vtkTestActor = vtkSmartPointer<vtkActor>::New();
+	vtkSmartPointer< vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
+
+	vtkTestCubeSource->SetXLength(10);
+	vtkTestCubeSource->SetYLength(10);
+	vtkTestCubeSource->SetZLength(10);
+	vtkTestCubeSource->SetCenter(0, 0, 0);
+	vtkTestCubeSource->Update();
+
+	//if (m_vtkTestCubeSource == NULL)
+	//	m_vtkTestCubeSource = vtkCubeSource::New();
+	//else
+	//	return;
+
+	//m_vtkTestPolyDataMapper = vtkPolyDataMapper::New();
+	vtkTestPolyDataMapper->SetInputData(vtkTestCubeSource->GetOutput());
+
+
+	//m_vtkTestActor = vtkActor::New();
+	vtkTestActor->SetMapper(vtkTestPolyDataMapper);
+
+	//vtkRenderer* renderer = vtkRenderer::New();
+	renderer->AddActor(vtkTestActor);
+	renderer->SetBackground(.1, .1, .1);
+	renderer->ResetCamera();
+	
+	
+	m_vtkWindow->AddRenderer(renderer);
+	m_vtkWindow->Render();
+
+	this->SettingOrientationWidget();
 }
 
 //dcm Test
@@ -392,8 +474,16 @@ void CMFCApplication1Dlg::VtkDCMTest()
 
 	////////////////////////////////////////////////////////////////
 	//PCB
-	compositeOpacity->AddPoint(15277, 0);
-	compositeOpacity->AddPoint(21823, 1);
+	//compositeOpacity->AddPoint(15277, 0);
+	//compositeOpacity->AddPoint(21823, 1);
+	
+	//compositeOpacity->AddPoint(30000, 0);
+	//compositeOpacity->AddPoint(40000, 1);
+	
+	
+	compositeOpacity->AddPoint(40000, 0);
+	compositeOpacity->AddPoint(70000, 1);
+	compositeOpacity->ClampingOff();
 
 	////////////////////////////////////////////////////////////////
 	//color setting
@@ -410,17 +500,34 @@ void CMFCApplication1Dlg::VtkDCMTest()
 
 	//Conncet with Mapper - dcmReader(FullMap)
 	//m_smartV_Mapper->SetInputData(m_DCMReader->GetOutput());
-	
+	////////////////////////////////////////////////////////////////
 	//slider
-	vtkSmartPointer<vtkImageData> originalImage = m_DCMReader->GetOutput();
-	vtkSmartPointer<vtkImageData> sliderImage = vtkSmartPointer<vtkImageData>::New();
-	this->DCMSilder(sliderImage, originalImage);
+	//vtkSmartPointer<vtkImageData> originalImage = m_DCMReader->GetOutput();
+	//vtkSmartPointer<vtkImageData> sliderImage = vtkSmartPointer<vtkImageData>::New();
+	//this->DCMSilder(sliderImage, originalImage);
+	//
+	//m_smartV_Mapper->SetInputData(sliderImage);
 
-	m_smartV_Mapper->SetInputData(sliderImage);
 
 	////////////////////////////////////////////////////////////////
+	//TIFF READER
+	//vtkSmartPointer<vtkImageData> x = TIFFReader();
+	////////////////////////////////////////////////////////////////
+	//TIFF READER OPENCV
+	vtkSmartPointer<vtkImageData> x = TIFFReaderOpenCV();
+	////////////////////////////////////////////////////////////////
+	//TIFF READER OPENCV vtk Image Import
+	//vtkSmartPointer<vtkImageImport> x = TIFFReaderOpenCVImport();
+	
+	//vtkSmartPointer<vtkImageShiftScale> convertScaleType = vtkSmartPointer<vtkImageShiftScale>::New();
+	//convertScaleType->SetInputData(x);
+	//convertScaleType->SetOutputScalarTypeToShort();
+	//convertScaleType->Update();
+	m_smartV_Mapper->SetInputData(x);
+	//m_smartV_Mapper->SetInputConnection(x->GetOutputPort());
+	////////////////////////////////////////////////////////////////
 	//Setting clip plane;
-	m_smartV_Mapper->SetBlendModeToComposite();//이게 먼저
+	//m_smartV_Mapper->SetBlendModeToComposite();//이게 먼저
 	m_smartV_Mapper->AddClippingPlane(m_zTopClipPlane);	// +Z clip
 	m_smartV_Mapper->AddClippingPlane(m_zBtmClipPlane);	// -Z clip
 
@@ -601,7 +708,7 @@ void CMFCApplication1Dlg::DCMSilder(vtkSmartPointer<vtkImageData> slider, vtkSma
 	//잘라낼 크기 설정
 	slider->SetDimensions(100, 100, 100);
 	//slider 이미지 버퍼 설정
-	slider->AllocateScalars(VTK_SHORT, 1);
+	slider->AllocateScalars(VTK_UNSIGNED_SHORT, 1);
 
 	void* imageOrign = origin->GetScalarPointer();
 	void* copyBuffer = slider->GetScalarPointer();
@@ -638,7 +745,7 @@ void CMFCApplication1Dlg::DCMSilder(vtkSmartPointer<vtkImageData> slider, vtkSma
 }
 
 // TIFF Reader
-void CMFCApplication1Dlg::TIFFReader()
+vtkSmartPointer<vtkImageData> CMFCApplication1Dlg::TIFFReader()
 {
 	//vtkSmartPointer<vtkCTIFFImageReader> CTIFFReader = vtkSmartPointer<vtkCTIFFImageReader>::New();
 	//CTIFFReader->SetDirectoryName("D:/PCB_CT_TIFF");
@@ -660,6 +767,8 @@ void CMFCApplication1Dlg::TIFFReader()
 	vtkSmartPointer<vtkImageData> slider = vtkSmartPointer<vtkImageData>::New();
 	vtkSmartPointer<vtkTIFFReader> reader = vtkSmartPointer<vtkTIFFReader>::New();
 
+	
+
 	char DirectoryName[] = "D:/PCB_CT_TIFF";
 	std::vector<std::string> * TIFFFileNames = new std::vector<std::string>;
 	if (DirectoryName)
@@ -669,7 +778,7 @@ void CMFCApplication1Dlg::TIFFReader()
 		if (!opened)
 		{
 			dir->Delete();
-			return;
+			return NULL;
 		}
 		vtkIdType numFiles = dir->GetNumberOfFiles();
 
@@ -713,7 +822,7 @@ void CMFCApplication1Dlg::TIFFReader()
 	//잘라낼 크기 설정
 	buffer->SetDimensions(1024, 1024, 100);
 	//slider 이미지 버퍼 설정
-	buffer->AllocateScalars(VTK_SHORT, 1);
+	buffer->AllocateScalars(VTK_UNSIGNED_SHORT, 1);
 
 
 
@@ -721,16 +830,16 @@ void CMFCApplication1Dlg::TIFFReader()
 	//잘라낼 크기 설정
 	slider->SetDimensions(1024, 1024, 100);
 	//slider 이미지 버퍼 설정
-	slider->AllocateScalars(VTK_SHORT, 1);
+	slider->AllocateScalars(VTK_UNSIGNED_SHORT, 1);
 
 	std::vector<std::string>::iterator fiter;
 
 	int count = 0;
 	vtkIdType numFiles = static_cast<int>( TIFFFileNames->size() );
 
-	void* MainStack = buffer->GetScalarPointer();
+	USHORT* MainStackData = (USHORT*)buffer->GetScalarPointer();
 
-	unsigned char* MainStackData = (unsigned char*)MainStack;
+	//USHORT* MainStackData = (USHORT*)MainStack;
 
 	//디버그 return 확인용
 	int originType = buffer->GetScalarType();
@@ -739,10 +848,10 @@ void CMFCApplication1Dlg::TIFFReader()
 
 
 	//image 위치에 따른 OffSet 설정
-	int imgOffSetX = 2048;
+	int imgOffSetX = 1024;
 	int imgOffSetY = 1024;
 
-
+	int i = 0;
 
 	for (fiter = TIFFFileNames->begin();
 		fiter != TIFFFileNames->end();
@@ -750,10 +859,351 @@ void CMFCApplication1Dlg::TIFFReader()
 	{
 		reader->SetFileName(fiter->c_str());
 		reader->Update();
-		unsigned char* src = (unsigned char*) reader->GetOutput();
-		memcpy(MainStackData, src, imgOffSetX * imgOffSetY);
+		
+		vtkImageData * img = reader->GetOutput();
+		//vtkSmartPointer<vtkImageShiftScale> changeFormat = vtkSmartPointer< vtkImageShiftScale>::New();
+		//changeFormat->SetOutputScalarTypeToShort();
+		//changeFormat->SetInputData(reader->GetOutput());
+		//changeFormat->Update();
+
+		USHORT* src = (USHORT*)reader->GetOutput()->GetScalarPointer();
+		memcpy(MainStackData, src, imgOffSetX * imgOffSetY* sizeof(USHORT));
 		MainStackData += (imgOffSetX * imgOffSetY);
+		i++;
 	}
 
 	
+	return buffer;
+	
+}
+
+
+// TIFF Reader
+vtkSmartPointer<vtkImageData> CMFCApplication1Dlg::TIFFReaderOpenCV()
+{
+
+
+	vtkSmartPointer<vtkImageData> buffer = vtkSmartPointer<vtkImageData>::New();
+	vtkSmartPointer<vtkImageData> slider = vtkSmartPointer<vtkImageData>::New();
+	vtkSmartPointer<vtkTIFFReader> reader = vtkSmartPointer<vtkTIFFReader>::New();
+
+
+
+	char DirectoryName[] = "D:/PCB_CT_TIFF";
+	std::vector<std::string> * TIFFFileNames = new std::vector<std::string>;
+	if (DirectoryName)
+	{
+		vtkDirectory* dir = vtkDirectory::New();
+		int opened = dir->Open(DirectoryName);
+		if (!opened)
+		{
+			dir->Delete();
+			return NULL;
+		}
+		vtkIdType numFiles = dir->GetNumberOfFiles();
+
+		TIFFFileNames->clear();
+		//this->AppHelper->Clear();
+
+		for (vtkIdType i = 0; i < numFiles; i++)
+		{
+			if (strcmp(dir->GetFile(i), ".") == 0 ||
+				strcmp(dir->GetFile(i), "..") == 0)
+			{
+				continue;
+			}
+
+			std::string fileString = DirectoryName;
+			fileString += "/";
+			fileString += dir->GetFile(i);
+
+			//int val = this->CanReadFile(fileString.c_str());
+
+			//open 확인시 TURE = 3 FALSE = 0 리턴;
+			//if (val == 3)
+			//{
+			//	vtkDebugMacro(<< "Adding " << fileString.c_str() << " to DICOMFileNames.");
+			TIFFFileNames->push_back(fileString);
+			//}
+			//else
+			//{
+			//	vtkDebugMacro(<< fileString.c_str() << " - DICOMParser CanReadFile returned : " << val);
+			//}
+
+		}
+		std::vector<std::string>::iterator iter;
+		std::vector<std::pair<float, std::string> > sortedFiles;
+	}
+
+
+
+
+	buffer->SetOrigin(0, 0, 0);
+	//잘라낼 크기 설정
+	buffer->SetDimensions(1024, 1024, 100);
+	//slider 이미지 버퍼 설정
+	buffer->AllocateScalars(VTK_UNSIGNED_SHORT, 1);
+
+
+
+	slider->SetOrigin(0, 0, 0);
+	//잘라낼 크기 설정
+	slider->SetDimensions(1024, 1024, 100);
+	//slider 이미지 버퍼 설정
+	slider->AllocateScalars(VTK_UNSIGNED_SHORT, 1);
+
+	std::vector<std::string>::iterator fiter;
+
+	int count = 0;
+	vtkIdType numFiles = static_cast<int>(TIFFFileNames->size());
+
+	void* MainStack = buffer->GetScalarPointer();
+
+	USHORT* MainStackData = (USHORT*)MainStack;
+
+	//디버그 return 확인용
+	int originType = buffer->GetScalarType();
+	unsigned long originSize = buffer->GetActualMemorySize();
+	//int copysize = slider->GetActualMemorySize();
+
+
+	//image 위치에 따른 OffSet 설정
+	int imgOffSetX = 1024;
+	int imgOffSetY = 1024;
+
+	int i = 0;
+
+	for (fiter = TIFFFileNames->begin();
+		fiter != TIFFFileNames->end();
+		++fiter)
+	{
+		cv::Mat cvImg = cv::imread(fiter->c_str(), cv::IMREAD_UNCHANGED);
+
+		
+		//vtkSmartPointer<vtkImageShiftScale> changeFormat = vtkSmartPointer< vtkImageShiftScale>::New();
+		//changeFormat->SetOutputScalarTypeToShort();
+		//changeFormat->SetInputData(reader->GetOutput());
+		//changeFormat->Update();
+
+		USHORT* src = (USHORT*) cvImg.data;
+		memcpy(MainStackData, src, imgOffSetX * imgOffSetY * sizeof(USHORT));
+		MainStackData += (imgOffSetX * imgOffSetY);
+		i++;
+	}
+
+
+	return buffer;
+
+}
+
+
+vtkSmartPointer<vtkImageImport> CMFCApplication1Dlg::TIFFReaderOpenCVImport()
+{
+	vtkSmartPointer<vtkImageData> buffer = vtkSmartPointer<vtkImageData>::New();
+	vtkSmartPointer<vtkImageData> slider = vtkSmartPointer<vtkImageData>::New();
+	vtkSmartPointer<vtkTIFFReader> reader = vtkSmartPointer<vtkTIFFReader>::New();
+
+
+
+	char DirectoryName[] = "D:/PCB_CT_TIFF";
+	std::vector<std::string> * TIFFFileNames = new std::vector<std::string>;
+	if (DirectoryName)
+	{
+		vtkDirectory* dir = vtkDirectory::New();
+		int opened = dir->Open(DirectoryName);
+		if (!opened)
+		{
+			dir->Delete();
+			return NULL;
+		}
+		vtkIdType numFiles = dir->GetNumberOfFiles();
+
+		TIFFFileNames->clear();
+		//this->AppHelper->Clear();
+
+		for (vtkIdType i = 0; i < numFiles; i++)
+		{
+			if (strcmp(dir->GetFile(i), ".") == 0 ||
+				strcmp(dir->GetFile(i), "..") == 0)
+			{
+				continue;
+			}
+
+			std::string fileString = DirectoryName;
+			fileString += "/";
+			fileString += dir->GetFile(i);
+
+			//int val = this->CanReadFile(fileString.c_str());
+
+			//open 확인시 TURE = 3 FALSE = 0 리턴;
+			//if (val == 3)
+			//{
+			//	vtkDebugMacro(<< "Adding " << fileString.c_str() << " to DICOMFileNames.");
+			TIFFFileNames->push_back(fileString);
+			//}
+			//else
+			//{
+			//	vtkDebugMacro(<< fileString.c_str() << " - DICOMParser CanReadFile returned : " << val);
+			//}
+
+		}
+		std::vector<std::string>::iterator iter;
+		std::vector<std::pair<float, std::string> > sortedFiles;
+	}
+
+
+
+	std::vector<std::string>::iterator fiter;
+
+	int count = 0;
+	vtkIdType numFiles = static_cast<int>(TIFFFileNames->size());
+
+	void* MainStack = buffer->GetScalarPointer();
+
+	USHORT* MainStackData = (USHORT*)malloc(1024*1024*100 * 2);
+
+	//디버그 return 확인용
+	int originType = buffer->GetScalarType();
+	unsigned long originSize = buffer->GetActualMemorySize();
+	//int copysize = slider->GetActualMemorySize();
+
+
+	//image 위치에 따른 OffSet 설정
+	int imgOffSetX = 1024;
+	int imgOffSetY = 1024;
+
+	int i = 0;
+
+
+
+
+
+	for (fiter = TIFFFileNames->begin();
+		fiter != TIFFFileNames->end();
+		++fiter)
+	{
+		cv::Mat cvImg = cv::imread(fiter->c_str(), cv::IMREAD_UNCHANGED);
+
+
+		//vtkSmartPointer<vtkImageShiftScale> changeFormat = vtkSmartPointer< vtkImageShiftScale>::New();
+		//changeFormat->SetOutputScalarTypeToShort();
+		//changeFormat->SetInputData(reader->GetOutput());
+		//changeFormat->Update();
+
+		USHORT* src = (USHORT*)cvImg.data;
+		memcpy(MainStackData, src, imgOffSetX * imgOffSetY * sizeof(USHORT));
+		MainStackData += (imgOffSetX * imgOffSetY);
+		i++;
+	}
+
+
+	int dims[] = { 100 ,1024, 1024 };
+
+	cv::Mat fullImg = cv::Mat(3, dims, CV_16UC1, MainStackData);
+
+	std::vector<cv::Range> ranges = { cv::Range(0, 99),
+									  cv::Range(0, 1023),
+									  cv::Range(0, 1023) };
+	cv::Mat matPart = fullImg(ranges);
+
+	vtkSmartPointer<vtkImageImport> m_vtkVolumeImageImport;
+	m_vtkVolumeImageImport = vtkSmartPointer<vtkImageImport>::New();
+	m_vtkVolumeImageImport->SetDataSpacing(1, 1, 1);
+	m_vtkVolumeImageImport->SetDataOrigin(0, 0, 0);
+	m_vtkVolumeImageImport->SetWholeExtent(0, 1023, 0, 1023, 0, 99);
+	m_vtkVolumeImageImport->SetDataExtentToWholeExtent();
+	m_vtkVolumeImageImport->SetDataScalarType(VTK_UNSIGNED_SHORT);
+	m_vtkVolumeImageImport->Update();
+
+	int type = m_vtkVolumeImageImport->GetDataScalarType();
+
+
+	m_vtkVolumeImageImport->SetNumberOfScalarComponents(1);
+	m_vtkVolumeImageImport->SetImportVoidPointer((void*) matPart.data);
+	m_vtkVolumeImageImport->Update();
+
+	return m_vtkVolumeImageImport;
+
+
+}
+//임시 컨버트용
+void CMFCApplication1Dlg :: convertDICOMToTIFF()
+{
+	vtkSmartPointer<vtkTIFFWriter> writer = vtkSmartPointer<vtkTIFFWriter>::New();
+	
+	char DirectoryName[] = "D:/PCB_CT";
+	std::vector<std::string> * TIFFFileNames = new std::vector<std::string>;
+	if (DirectoryName)
+	{
+		vtkDirectory* dir = vtkDirectory::New();
+		int opened = dir->Open(DirectoryName);
+		if (!opened)
+		{
+			dir->Delete();
+			return ;
+		}
+		vtkIdType numFiles = dir->GetNumberOfFiles();
+
+		TIFFFileNames->clear();
+		//this->AppHelper->Clear();
+
+		for (vtkIdType i = 0; i < numFiles; i++)
+		{
+			if (strcmp(dir->GetFile(i), ".") == 0 ||
+				strcmp(dir->GetFile(i), "..") == 0)
+			{
+				continue;
+			}
+
+			std::string fileString = DirectoryName;
+			fileString += "/";
+			fileString += dir->GetFile(i);
+
+			//int val = this->CanReadFile(fileString.c_str());
+
+			//open 확인시 TURE = 3 FALSE = 0 리턴;
+			//if (val == 3)
+			//{
+			//	vtkDebugMacro(<< "Adding " << fileString.c_str() << " to DICOMFileNames.");
+			TIFFFileNames->push_back(fileString);
+			//}
+			//else
+			//{
+			//	vtkDebugMacro(<< fileString.c_str() << " - DICOMParser CanReadFile returned : " << val);
+			//}
+
+		}
+		std::vector<std::string>::iterator iter;
+		std::vector<std::pair<float, std::string> > sortedFiles;
+	}
+
+	std::vector<std::string>::iterator fiter;
+	vtkSmartPointer <vtkDICOMImageReader> reader = vtkSmartPointer<vtkDICOMImageReader>::New();
+	for (fiter = TIFFFileNames->begin();
+		fiter != TIFFFileNames->end();
+		++fiter)
+	{
+		reader->SetFileName(fiter->c_str());
+		reader->Update();
+
+
+		vtkSmartPointer<vtkImageShiftScale> changeFormat = vtkSmartPointer< vtkImageShiftScale>::New();
+		changeFormat->SetOutputScalarTypeToUnsignedShort();
+		changeFormat->SetInputData(reader->GetOutput());
+		changeFormat->Update();
+
+		fiter->replace(19, 22, "tiff");
+
+		writer->SetFileName(fiter->c_str());
+		writer->SetInputData(changeFormat->GetOutput());
+		writer->Write();
+	}
+}
+
+
+void CMFCApplication1Dlg::OnNMCustomdrawSliderBottom(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	LPNMCUSTOMDRAW pNMCD = reinterpret_cast<LPNMCUSTOMDRAW>(pNMHDR);
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	*pResult = 0;
 }
