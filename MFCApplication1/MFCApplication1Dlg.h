@@ -41,7 +41,28 @@ public:
 	vtkSmartPointer<vtkOrientationMarkerWidget>		m_orientationWidget;
 	vtkSmartPointer<vtkTextWidget>					m_textWidget;
 	vtkSmartPointer<vtkDICOMImageReader>			m_DCMReader;
-	vtkSmartPointer<vtkSmartVolumeMapper>			m_smartV_Mapper;
+	vtkSmartPointer<vtkGPUVolumeRayCastMapper>			m_smartV_Mapper;
+	vtkSmartPointer<vtkRenderer>					m_vtkRenderer;
+
+
+	vtkSmartPointer<vtkRenderWindowInteractor>		m_vtkInteractor;
+	vtkSmartPointer<vtkGPUVolumeRayCastMapper>		m_vtkVolumeMapper;
+	vtkSmartPointer<vtkPiecewiseFunction>			m_vtkVolumePiecewiseFunction;
+	vtkSmartPointer<vtkColorTransferFunction>		m_vtkVolumeColorTransferFunction;
+	vtkSmartPointer<vtkVolumeProperty>				m_vtkVolumeProperty;
+	vtkSmartPointer<vtkImageData>					m_vtkVolumeImageData;
+	vtkSmartPointer<vtkVolume>						m_vtkVolume;
+
+
+	vtkSmartPointer<vtkOutlineFilter>				m_vtkOutlineFilter;
+	vtkSmartPointer<vtkPolyDataMapper>				m_vtkPolyDataMapper;
+	vtkSmartPointer<vtkActor>						m_vtkActor;
+	vtkSmartPointer<vtkImageResliceMapper>			m_vtkImageResliceMapper;
+	vtkSmartPointer<vtkImageProperty>				m_vtkImageProp;
+	vtkSmartPointer< vtkImageSlice>					m_vtkImageSlice;
+
+
+
 
 
 	//TestObject;
@@ -91,4 +112,20 @@ public:
 	vtkSmartPointer<vtkImageImport> TIFFReaderOpenCVImport();
 	void convertDICOMToTIFF();
 	afx_msg void OnNMCustomdrawSliderBottom(NMHDR *pNMHDR, LRESULT *pResult);
+
+
+	void newCreate();
+	void initialize(HWND parent);
+	void onSize(int width, int height);
+	void volumePropInitialize();
+	void setROIVolumeDataOpenCV(int topLeftX, int topLeftY, int btmRightX, int btmRightY, int sliceTopZ, int sliceBtmZ);
+
+	void setVtkOutLine();
+
+
+	void setSliceImage();
+
+	void setSliceImage2();
+
+	void setOrientAxesActor();
 };

@@ -57,8 +57,11 @@
 ////////////////////////////////////////////////////////
 //VTK 
 #include <vtkAutoInit.h>
-#define vtkRenderingCore_AUTOINIT 4(vtkRenderingOpenGL2, vtkInteractionStyle, vtkRenderingFreeType, vtkRenderingContextOpenGL2)
-#define vtkRenderingVolume_AUTOINIT 1(vtkRenderingVolumeOpenGL2)
+VTK_MODULE_INIT(vtkInteractionStyle)
+VTK_MODULE_INIT(vtkRenderingOpenGL2)
+VTK_MODULE_INIT(vtkRenderingVolumeOpenGL2)
+VTK_MODULE_INIT(vtkRenderingFreeType)
+
 
 
 //////////
@@ -148,3 +151,10 @@
 #include <vtkAnnotatedCubeActor.h>
 #include <vtkInformation.h>
 #include <vtkImageImport.h>
+
+#include <vtkOutlineFilter.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkImageResliceMapper.h>
+
+#include <vtkImageSlice.h>
+#include <vtkInteractorStyleImage.h>

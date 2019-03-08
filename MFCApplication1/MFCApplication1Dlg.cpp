@@ -23,6 +23,28 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <vtkImageSliceMapper.h>
+#include <vtkImageSlice.h>
+#include <vtkInteractorStyleImage.h>
+#include <vtkImageActor.h>
+
+
+#include <vtkLookupTable.h>
+#include <vtkMatrix4x4.h>
+#include <vtkImageMapToColors.h>
+#include <vtkImageProperty.h>
+
+#include <vtkScalarBarActor.h>
+
+
+#include <vtkAxesActor.h>
+//#include <vtkOrientationMarkerWidget.h>
+
+
+#include <vtkPlaneWidget.h>
+
+
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -123,8 +145,14 @@ BOOL CMFCApplication1Dlg::OnInitDialog()
 	//seting VtkWindow - Window32
 	if (this->GetDlgItem(IDC_STATIC_RENDERWINDOW))
 	{
-		this->InitVtkWindow(this->GetDlgItem(IDC_STATIC_RENDERWINDOW)->GetSafeHwnd());
+		
+		//this->InitVtkWindow(this->GetDlgItem(IDC_STATIC_RENDERWINDOW)->GetSafeHwnd());
+		this->initialize(this->GetDlgItem(IDC_STATIC_RENDERWINDOW)->GetSafeHwnd());
 		this->ResizeVtkWindow();
+		
+		
+
+	
 	}
 
 
@@ -198,8 +226,12 @@ void CMFCApplication1Dlg::InitVtkWindow(void* hWnd)
 		vtkSmartPointer<vtkRenderWindowInteractor> interactor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
 		interactor->SetInteractorStyle(vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New());
 
-		vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
-		renderer->SetBackground(.0, .0, .0);
+		//vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
+		//renderer->SetBackground(.0, .0, .0);
+
+		m_vtkRenderer = vtkSmartPointer<vtkRenderer>::New();
+		m_vtkRenderer->SetBackground(.0, .0, .0);
+
 
 		//원래는 책에서도 말하듯 이게 맞는거 같긴한데
 		//아마 이렇게 하면 이 메서드를 빠저나가는 순간 문제가 생기지 않을까?
@@ -207,8 +239,11 @@ void CMFCApplication1Dlg::InitVtkWindow(void* hWnd)
 		//interactor->SetRenderWindow(m_vtkWindow);
 
 		m_vtkWindow->SetParentId(hWnd);
-		m_vtkWindow->AddRenderer(renderer);
-		m_vtkWindow->SetInteractor(interactor);
+		m_vtkWindow->AddRenderer(m_vtkRenderer);
+		//m_vtkWindow->SetInteractor(interactor);
+		interactor->SetRenderWindow(m_vtkWindow);
+		
+		interactor->Initialize();
 		m_vtkWindow->Render();
 	}
 }
@@ -221,7 +256,8 @@ void CMFCApplication1Dlg::ResizeVtkWindow()
 	CRect rc;
 	GetDlgItem(IDC_STATIC_RENDERWINDOW)->GetClientRect(rc);
 
-	m_vtkWindow->SetSize(rc.Width(), rc.Height());
+	//m_vtkWindow->SetSize(rc.Width(), rc.Height());
+	this->onSize(rc.Width(), rc.Height());
 }
 
 //////////////////////////////////////////////////////////
@@ -239,7 +275,21 @@ void CMFCApplication1Dlg::OnBnClickedButton1()
 
 	start = clock();
 
-	this->VtkDCMTest();
+	
+	this->volumePropInitialize();
+	//this->VtkDCMTest();
+	this->setROIVolumeDataOpenCV(0, 0, 1024, 1024, 0, 100);
+	//this->setVtkOutLine();
+
+	//m_vtkRenderer->SetBackground(.0, .0, .0);
+	setSliceImage();
+	m_vtkWindow->Render();
+	setOrientAxesActor();
+	//m_vtkInteractor->SetDesiredUpdateRate(1000);
+
+	//m_vtkInteractor->Start();
+	
+	
 	
 	end = clock();
 	result = (double)(end - start);
@@ -309,6 +359,10 @@ void CMFCApplication1Dlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScroll
 *					vtk TEST 관련 함수
 */
 ///////////////////////////////////////////////////////////
+
+#pragma region TEST_FUNC
+
+
 
 //Cone, Cylinder TEST 
 void CMFCApplication1Dlg::VtkConeTest()
@@ -440,25 +494,25 @@ void CMFCApplication1Dlg::VtkDCMTest()
 {
 	//////////////////////////////////
 	// DCM READ
-	m_DCMReader = vtkSmartPointer<vtkDICOMImageReader>::New();
-	m_DCMReader->SetDirectoryName("D:/PCB_CT");
-	m_DCMReader->Update();
+	//m_DCMReader = vtkSmartPointer<vtkDICOMImageReader>::New();
+	//m_DCMReader->SetDirectoryName("D:/PCB_CT");
+	//m_DCMReader->Update();
 
 	//////////////////////////////////
 	// DCM Info
-	m_DCMReader->GetOutput()->GetBounds(m_dcmBounds);
-	m_DCMReader->GetDataOrigin(m_dcmOrigin);
-	m_DCMReader->GetDataExtent(m_dcmExtent);
+	//m_DCMReader->GetOutput()->GetBounds(m_dcmBounds);
+	//m_DCMReader->GetDataOrigin(m_dcmOrigin);
+	//m_DCMReader->GetDataExtent(m_dcmExtent);
 
 	//////////////////////////////////
 	// add Plane
-	m_zTopClipPlane = vtkSmartPointer<vtkPlane>::New();
-	m_zTopClipPlane->SetOrigin(m_dcmExtent[1], m_dcmExtent[3], m_dcmExtent[5]);
-	m_zTopClipPlane->SetNormal(0, 0, -1);
+	//m_zTopClipPlane = vtkSmartPointer<vtkPlane>::New();
+	//m_zTopClipPlane->SetOrigin(m_dcmExtent[1], m_dcmExtent[3], m_dcmExtent[5]);
+	//m_zTopClipPlane->SetNormal(0, 0, -1);
 
-	m_zBtmClipPlane = vtkSmartPointer<vtkPlane>::New();
-	m_zBtmClipPlane->SetOrigin(m_dcmExtent[1], m_dcmExtent[3], m_dcmExtent[4]);
-	m_zBtmClipPlane->SetNormal(0, 0, 1);
+	//m_zBtmClipPlane = vtkSmartPointer<vtkPlane>::New();
+	//m_zBtmClipPlane->SetOrigin(m_dcmExtent[1], m_dcmExtent[3], m_dcmExtent[4]);
+	//m_zBtmClipPlane->SetNormal(0, 0, 1);
 
 
 	////////////////////////////////////////////////////////////////
@@ -480,6 +534,7 @@ void CMFCApplication1Dlg::VtkDCMTest()
 	//compositeOpacity->AddPoint(30000, 0);
 	//compositeOpacity->AddPoint(40000, 1);
 	
+	compositeOpacity->RemoveAllPoints();
 	
 	compositeOpacity->AddPoint(40000, 0);
 	compositeOpacity->AddPoint(70000, 1);
@@ -490,46 +545,32 @@ void CMFCApplication1Dlg::VtkDCMTest()
 	vtkSmartPointer<vtkColorTransferFunction> color
 		= vtkSmartPointer<vtkColorTransferFunction>::New();
 
-	color->AddRGBPoint(-15000, 1, 0, 0);
-	color->AddRGBPoint(-18000, 1, 0, 0);
-	color->AddRGBPoint(-22000, 0, 1, 0);
+	color->RemoveAllPoints();
+
 
 	////////////////////////////////////////////////////////////////
 	//Mapper
-	m_smartV_Mapper	= vtkSmartPointer<vtkSmartVolumeMapper>::New();
+	m_smartV_Mapper	= vtkSmartPointer<vtkGPUVolumeRayCastMapper>::New();
 
-	//Conncet with Mapper - dcmReader(FullMap)
-	//m_smartV_Mapper->SetInputData(m_DCMReader->GetOutput());
+
 	////////////////////////////////////////////////////////////////
 	//slider
-	//vtkSmartPointer<vtkImageData> originalImage = m_DCMReader->GetOutput();
-	//vtkSmartPointer<vtkImageData> sliderImage = vtkSmartPointer<vtkImageData>::New();
-	//this->DCMSilder(sliderImage, originalImage);
-	//
-	//m_smartV_Mapper->SetInputData(sliderImage);
+
 
 
 	////////////////////////////////////////////////////////////////
 	//TIFF READER
-	//vtkSmartPointer<vtkImageData> x = TIFFReader();
+
+
 	////////////////////////////////////////////////////////////////
 	//TIFF READER OPENCV
-	vtkSmartPointer<vtkImageData> x = TIFFReaderOpenCV();
-	////////////////////////////////////////////////////////////////
-	//TIFF READER OPENCV vtk Image Import
-	//vtkSmartPointer<vtkImageImport> x = TIFFReaderOpenCVImport();
+
+
+
 	
-	//vtkSmartPointer<vtkImageShiftScale> convertScaleType = vtkSmartPointer<vtkImageShiftScale>::New();
-	//convertScaleType->SetInputData(x);
-	//convertScaleType->SetOutputScalarTypeToShort();
-	//convertScaleType->Update();
-	m_smartV_Mapper->SetInputData(x);
-	//m_smartV_Mapper->SetInputConnection(x->GetOutputPort());
 	////////////////////////////////////////////////////////////////
 	//Setting clip plane;
-	//m_smartV_Mapper->SetBlendModeToComposite();//이게 먼저
-	m_smartV_Mapper->AddClippingPlane(m_zTopClipPlane);	// +Z clip
-	m_smartV_Mapper->AddClippingPlane(m_zBtmClipPlane);	// -Z clip
+
 
 	////////////////////////////////////////////////////////////////
 	//Connect with Property - color and Opacity
@@ -538,44 +579,65 @@ void CMFCApplication1Dlg::VtkDCMTest()
 
 	volumeProperty->ShadeOn();
 	volumeProperty->SetInterpolationType(VTK_LINEAR_INTERPOLATION);
-	volumeProperty->SetColor(color);
+
 	volumeProperty->SetScalarOpacity(compositeOpacity);
+	volumeProperty->SetColor(color);
 
 	////////////////////////////////////////////////////////////////
 	//Conncet with Volume  - Mapper and Property
-	vtkSmartPointer<vtkVolume> volume
-		= vtkSmartPointer<vtkVolume> ::New();
-	volume->SetMapper(m_smartV_Mapper);
-	volume->SetProperty(volumeProperty);
+
 
 
 	////////////////////////////////////////////////////////////////
 	//Connect With Renderer - Volume
-	vtkSmartPointer<vtkRenderer> renderer
-		= vtkSmartPointer<vtkRenderer>::New();
+	
 
-	renderer->AddVolume(volume);
-	renderer->SetBackground(.8, .8, .8);
-	renderer->ResetCamera();
+	////////////////////////////////////////////////////////////////
+	//TIFF READER OPENCV vtk Image Import
+	vtkSmartPointer<vtkImageData> data = TIFFReaderOpenCV();
+
+
+	vtkSmartPointer<vtkVolume> volume
+		= vtkSmartPointer<vtkVolume> ::New();
+	
+
+	////Prop 대체실험
+	m_smartV_Mapper->SetInputData(data);
+	m_smartV_Mapper->SetBlendModeToComposite();
+	m_smartV_Mapper->Update();
+	
+	
+	volume->SetMapper(m_smartV_Mapper);
+	volume->SetProperty(volumeProperty);
+
+
+	//에러테스트
+
+	m_vtkRenderer->AddVolume(volume);
+	m_vtkRenderer->SetBackground(.8, .8, .8);
+	m_vtkRenderer->ResetCamera();
 
 	////////////////////////////////////////////////////////////////
 	//Connect With vtkWindow - Renderer 
-	m_vtkWindow->AddRenderer(renderer);
-	this->SetCilpBox(m_dcmBounds, renderer);
 	
+	//에러테스트
+	//m_vtkWindow->AddRenderer(renderer);
+	
+	
+	//this->SetCilpBox(m_dcmBounds, renderer);
+
+	//m_vtkWindow->GetInteractor()->Initialize();
 	m_vtkWindow->Render();
 
-
+	//renderer->Render();
 	///////////////////////////////////////////////////////////////
 	// another setting
-	SetClipSlide(m_dcmBounds[5], m_dcmExtent[5]);
-
-
-
+	//SetClipSlide(m_dcmBounds[5], m_dcmExtent[5]);
 
 	///////////////////////////////////////////////////////////////
 	//Setting widget
-	this->SettingOrientationWidget();
+
+
 
 }
 
@@ -885,7 +947,7 @@ vtkSmartPointer<vtkImageData> CMFCApplication1Dlg::TIFFReaderOpenCV()
 
 	vtkSmartPointer<vtkImageData> buffer = vtkSmartPointer<vtkImageData>::New();
 	vtkSmartPointer<vtkImageData> slider = vtkSmartPointer<vtkImageData>::New();
-	vtkSmartPointer<vtkTIFFReader> reader = vtkSmartPointer<vtkTIFFReader>::New();
+	//vtkSmartPointer<vtkTIFFReader> reader = vtkSmartPointer<vtkTIFFReader>::New();
 
 
 
@@ -940,7 +1002,7 @@ vtkSmartPointer<vtkImageData> CMFCApplication1Dlg::TIFFReaderOpenCV()
 
 	buffer->SetOrigin(0, 0, 0);
 	//잘라낼 크기 설정
-	buffer->SetDimensions(1024, 1024, 100);
+	buffer->SetExtent(0, 1023, 0, 1023, 0, 99);
 	//slider 이미지 버퍼 설정
 	buffer->AllocateScalars(VTK_UNSIGNED_SHORT, 1);
 
@@ -948,7 +1010,7 @@ vtkSmartPointer<vtkImageData> CMFCApplication1Dlg::TIFFReaderOpenCV()
 
 	slider->SetOrigin(0, 0, 0);
 	//잘라낼 크기 설정
-	slider->SetDimensions(1024, 1024, 100);
+	slider->SetExtent(0, 1023, 0, 1023, 0, 99);
 	//slider 이미지 버퍼 설정
 	slider->AllocateScalars(VTK_UNSIGNED_SHORT, 1);
 
@@ -1076,7 +1138,7 @@ vtkSmartPointer<vtkImageImport> CMFCApplication1Dlg::TIFFReaderOpenCVImport()
 
 
 
-
+	USHORT* picker = MainStackData;
 
 	for (fiter = TIFFFileNames->begin();
 		fiter != TIFFFileNames->end();
@@ -1091,8 +1153,8 @@ vtkSmartPointer<vtkImageImport> CMFCApplication1Dlg::TIFFReaderOpenCVImport()
 		//changeFormat->Update();
 
 		USHORT* src = (USHORT*)cvImg.data;
-		memcpy(MainStackData, src, imgOffSetX * imgOffSetY * sizeof(USHORT));
-		MainStackData += (imgOffSetX * imgOffSetY);
+		memcpy(picker, src, imgOffSetX * imgOffSetY * sizeof(USHORT));
+		picker += (imgOffSetX * imgOffSetY);
 		i++;
 	}
 
@@ -1113,7 +1175,7 @@ vtkSmartPointer<vtkImageImport> CMFCApplication1Dlg::TIFFReaderOpenCVImport()
 	m_vtkVolumeImageImport->SetWholeExtent(0, 1023, 0, 1023, 0, 99);
 	m_vtkVolumeImageImport->SetDataExtentToWholeExtent();
 	m_vtkVolumeImageImport->SetDataScalarType(VTK_UNSIGNED_SHORT);
-	m_vtkVolumeImageImport->Update();
+	//m_vtkVolumeImageImport->Update();
 
 	int type = m_vtkVolumeImageImport->GetDataScalarType();
 
@@ -1121,6 +1183,16 @@ vtkSmartPointer<vtkImageImport> CMFCApplication1Dlg::TIFFReaderOpenCVImport()
 	m_vtkVolumeImageImport->SetNumberOfScalarComponents(1);
 	m_vtkVolumeImageImport->SetImportVoidPointer((void*) matPart.data);
 	m_vtkVolumeImageImport->Update();
+
+
+	//잘린 이미지 확인
+	USHORT * testPointer = (USHORT *)m_vtkVolumeImageImport->GetOutput()->GetScalarPointer();
+	for (int i = 0; i < 100; i++)
+	{
+		cv::Mat img = cv::Mat(1024, 1024, CV_16UC1, testPointer);
+		(USHORT *)testPointer += (1024 * 1024);
+	}
+
 
 	return m_vtkVolumeImageImport;
 
@@ -1207,3 +1279,537 @@ void CMFCApplication1Dlg::OnNMCustomdrawSliderBottom(NMHDR *pNMHDR, LRESULT *pRe
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	*pResult = 0;
 }
+
+void CMFCApplication1Dlg::newCreate()
+{
+}
+#pragma endregion
+
+void CMFCApplication1Dlg::initialize(HWND parent)
+{
+	// TODO : smartPointer 제거 (예정, 삭제할지는 모르겠음)
+	m_vtkWindow = vtkSmartPointer< vtkRenderWindow>::New();
+	m_vtkRenderer = vtkSmartPointer< vtkRenderer>::New();
+	m_vtkInteractor = vtkSmartPointer< vtkRenderWindowInteractor>::New();
+
+	m_vtkInteractor->SetInteractorStyle(vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New());
+
+	m_vtkRenderer->SetBackground(0.1, 0.2, 0.4);
+
+	m_vtkWindow->SetParentId(parent);
+	m_vtkWindow->AddRenderer(m_vtkRenderer);
+	m_vtkWindow->SetInteractor(m_vtkInteractor);
+
+	m_vtkInteractor->Initialize();
+	m_vtkWindow->Render();
+}
+
+void CMFCApplication1Dlg::onSize(int width, int height)
+{
+	m_vtkWindow->SetSize(width, height);
+}
+
+void CMFCApplication1Dlg::volumePropInitialize()
+{
+	m_vtkVolumeMapper = vtkSmartPointer<vtkGPUVolumeRayCastMapper>::New();
+	m_vtkVolumePiecewiseFunction = vtkSmartPointer<vtkPiecewiseFunction>::New();
+	m_vtkVolumeColorTransferFunction = vtkSmartPointer<vtkColorTransferFunction>::New();
+	m_vtkVolumeProperty = vtkSmartPointer<vtkVolumeProperty>::New();
+
+
+#pragma endregion
+
+	m_vtkVolumePiecewiseFunction->RemoveAllPoints();
+	//m_vtkVolumePiecewiseFunction->ClampingOff();
+	m_vtkVolumePiecewiseFunction->AddPoint(40000, 0);
+	m_vtkVolumePiecewiseFunction->AddPoint(70000, 1);
+	m_vtkVolumePiecewiseFunction->ClampingOff();
+
+	m_vtkVolumeColorTransferFunction->RemoveAllPoints();
+	m_vtkVolumeColorTransferFunction->GetAboveRangeColor();
+
+	//TODO: 나중에 사용자가 추가하는 형식으로 구현하자
+	//this->addROIVolumeColorTransferFunctionPointer(-15000, 1, 0, 0);
+	//this->addROIVolumeColorTransferFunctionPointer(-18000, 1, 0, 0);
+	//this->addROIVolumeColorTransferFunctionPointer(-22000, 0, 1, 0);
+
+	m_vtkVolumeProperty->ShadeOn();
+	m_vtkVolumeProperty->SetInterpolationType(VTK_LINEAR_INTERPOLATION);
+
+	m_vtkVolumeProperty->SetScalarOpacity(m_vtkVolumePiecewiseFunction);
+	m_vtkVolumeProperty->SetColor(m_vtkVolumeColorTransferFunction);
+}
+
+void CMFCApplication1Dlg::setROIVolumeDataOpenCV(int topLeftX, int topLeftY, int btmRightX, int btmRightY, int sliceTopZ, int sliceBtmZ)
+{
+	//			TODO:
+			//타입이 일치하여 이렇게 집어넣었습니다.  차후 보기 쉽게 수정해주세요 (=> m_fullImgType +1, +2) 
+
+	if (m_vtkVolumeImageData != NULL)
+	{
+		m_vtkVolumeImageData->Delete();
+	}
+	m_vtkVolumeImageData = vtkSmartPointer<vtkImageData>::New();
+
+	//TODO : setting 수정
+	m_vtkVolumeImageData->SetOrigin(0, 0, 0);
+	m_vtkVolumeImageData->SetDimensions(1024, 1024, 100);
+	m_vtkVolumeImageData->AllocateScalars(VTK_UNSIGNED_SHORT, 1);
+
+	char DirectoryName[] = "D:/PCB_CT_TIFF";
+	std::vector<std::string> * TIFFFileNames = new std::vector<std::string>;
+	if (DirectoryName)
+	{
+		vtkDirectory* dir = vtkDirectory::New();
+		int opened = dir->Open(DirectoryName);
+		if (!opened)
+		{
+			dir->Delete();
+			return ;
+		}
+		vtkIdType numFiles = dir->GetNumberOfFiles();
+
+		TIFFFileNames->clear();
+		//this->AppHelper->Clear();
+
+		for (vtkIdType i = 0; i < numFiles; i++)
+		{
+			if (strcmp(dir->GetFile(i), ".") == 0 ||
+				strcmp(dir->GetFile(i), "..") == 0)
+			{
+				continue;
+			}
+
+			std::string fileString = DirectoryName;
+			fileString += "/";
+			fileString += dir->GetFile(i);
+
+			//int val = this->CanReadFile(fileString.c_str());
+
+			//open 확인시 TURE = 3 FALSE = 0 리턴;
+			//if (val == 3)
+			//{
+			//	vtkDebugMacro(<< "Adding " << fileString.c_str() << " to DICOMFileNames.");
+			TIFFFileNames->push_back(fileString);
+			//}
+			//else
+			//{
+			//	vtkDebugMacro(<< fileString.c_str() << " - DICOMParser CanReadFile returned : " << val);
+			//}
+
+		}
+		std::vector<std::string>::iterator iter;
+		std::vector<std::pair<float, std::string> > sortedFiles;
+	}
+
+	//int count = 0;
+	//vtkIdType numFiles = static_cast<int>(TIFFFileNames->size());
+
+	void* MainStack = m_vtkVolumeImageData->GetScalarPointer();
+
+	USHORT* MainStackData = (USHORT*)MainStack;
+
+	//디버그 return 확인용
+	//int originType = m_vtkVolumeImageData->GetScalarType();
+	//unsigned long originSize = m_vtkVolumeImageData->GetActualMemorySize();
+	//int copysize = slider->GetActualMemorySize();
+
+
+	//image 위치에 따른 OffSet 설정
+	int imgOffSetX = 1024;
+	int imgOffSetY = 1024;
+
+	int i = 0;
+
+	std::vector<std::string>::iterator fiter;
+
+	for (fiter = TIFFFileNames->begin();
+		fiter != TIFFFileNames->end();
+		++fiter)
+	{
+		cv::Mat cvImg = cv::imread(fiter->c_str(), cv::IMREAD_UNCHANGED);
+
+		USHORT* src = (USHORT*)cvImg.data;
+		memcpy(MainStackData, src, imgOffSetX * imgOffSetY * sizeof(USHORT));
+		MainStackData += (imgOffSetX * imgOffSetY);
+		i++;
+	}
+
+
+
+	////원본
+	//if (this->isBufferEmpty())
+	//	return XIK_ERROR_NO_BUFFER;
+
+	if (topLeftX < 0 || topLeftY < 0 ||
+		btmRightX <= 0 || btmRightY <= 0 ||
+		sliceTopZ < 0 || sliceBtmZ <= 0)
+		return;
+
+	int width = btmRightX - topLeftX;
+	int height = btmRightY - topLeftY;
+	int depth = sliceBtmZ - sliceTopZ;
+
+	if (width <= 0 || height <= 0 || depth <= 0)
+		return;
+
+	//int dims[3] = { m_fullImgX, m_fullImgY, m_fullImgSliceCount };
+
+
+	////TODO:
+	////타입이 일치하여 이렇게 집어넣었습니다.  차후 보기 쉽게 수정해주세요 (=> m_fullImgType +1, +2) 
+
+	////if (m_vtkVolumeImageData != NULL)
+	////{
+	////	m_vtkVolumeImageData->Delete();
+	////}
+	////m_vtkVolumeImageData = vtkSmartPointer<vtkImageData>::New();
+
+	//////TODO : setting 수정
+	////m_vtkVolumeImageData->SetOrigin(0, 0, 0);
+	////m_vtkVolumeImageData->SetExtent(0, width - 1, 0, height - 1, 0, depth - 1);
+	////m_vtkVolumeImageData->AllocateScalars(VTK_UNSIGNED_SHORT, 1);
+
+	//int x = m_vtkVolumeImageData->GetScalarType();
+	//char * dst = (char *)m_vtkVolumeImageData->GetScalarPointer();
+	//char * picker = (char*)m_imageBuffer;
+
+	//
+
+	//cv::Range cuttingPlaneRange[] = { cv::Range(topLeftY, btmRightY),  cv::Range(topLeftX, btmRightX) };
+	//int pitch = (width * height) * sizeof(unsigned short);
+
+	//picker += (sliceTopZ * m_fullImgX * m_fullImgY * sizeof(unsigned short));
+	//for (int i = sliceTopZ; i < sliceBtmZ; i++)
+	//{
+	//	cv::Mat slice = cv::Mat(m_fullImgY, m_fullImgX, CV_16UC1, picker);
+	//	cv::Mat cutImg = slice(cuttingPlaneRange).clone();
+	//	memcpy(dst, cutImg.data, pitch);
+	//	picker += (m_fullImgX * m_fullImgY * sizeof(unsigned short));
+	//	
+
+
+	//	cv::Mat saveData = cv::Mat(m_fullImgY, m_fullImgX, CV_16UC1, dst);
+	//	
+	//	std::string saveName = "cuttingfile";
+	//	saveName += std::string(i + "" );
+	//	saveName += ".tiff";
+	//	cv::imwrite(saveName, saveData);
+
+	//	dst += pitch;
+	//}
+	//x = m_vtkVolumeImageData->GetScalarType();
+
+	//#define XIK_DEBUG_SHOWSTACK_IMG
+#ifdef XIK_DEBUG_SHOWSTACK_IMG
+	//잘린 이미지 확인
+	{
+		USHORT * testPointer = (USHORT *)m_vtkImageData->GetScalarPointer();
+		for (int i = 0; i < depth; i++)
+		{
+			cv::Mat img = cv::Mat(height, width, CV_16UC1, testPointer);
+			(USHORT *)testPointer += (width * height);
+		}
+	}
+#endif
+
+	m_vtkVolumeMapper->SetInputData(m_vtkVolumeImageData);
+	m_vtkVolumeMapper->SetBlendModeToComposite();
+
+	m_vtkVolumeMapper->Update();
+	//m_vtkVolumeMapper->SetRequestedRenderModeToGPU();
+	m_vtkVolume = vtkSmartPointer< vtkVolume>::New();
+
+	m_vtkVolume->SetMapper(m_vtkVolumeMapper);
+	m_vtkVolume->SetProperty(m_vtkVolumeProperty);
+
+	//m_vtkVolume->Update();
+
+	m_vtkRenderer->AddVolume(m_vtkVolume);
+	m_vtkRenderer->SetBackground(.8, .8, .8);
+	m_vtkRenderer->ResetCamera();
+
+	//this->setHistogramData();
+
+	return;
+}
+//---------------------------------------------------------------------------------
+
+void CMFCApplication1Dlg::setVtkOutLine()
+{
+	m_vtkOutlineFilter = vtkSmartPointer<vtkOutlineFilter>::New();
+	m_vtkOutlineFilter->SetInputData(m_vtkVolumeImageData);
+
+	m_vtkOutlineFilter->Update();
+
+	m_vtkPolyDataMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+	m_vtkPolyDataMapper->SetInputData(m_vtkOutlineFilter->GetOutput());
+
+
+	m_vtkActor = vtkSmartPointer<vtkActor>::New();
+	m_vtkActor->SetMapper(m_vtkPolyDataMapper);
+
+	m_vtkActor->GetProperty()->SetColor(1, 0, 0);
+
+	m_vtkRenderer->AddActor(m_vtkActor);
+}
+
+void CMFCApplication1Dlg::setSliceImage()
+{
+	int extent[6];
+	double spacing[3];
+	double origin[3];
+	m_vtkVolumeImageData->GetExtent(extent);
+	m_vtkVolumeImageData->GetSpacing(spacing);
+	m_vtkVolumeImageData->GetOrigin(origin);
+
+	double center[3];
+	center[0] = origin[0] + spacing[0] * 0.5 * (extent[0] + extent[1]);
+	center[1] = origin[1] + spacing[1] * 0.5 * (extent[2] + extent[3]);
+	center[2] = origin[2] + spacing[2] * 0.5 * (extent[4] + extent[5]);
+
+	// Matrices for axial, coronal, sagittal, oblique view orientations
+	static double axialElements[16] = {
+			 1, 0, 0, 0,
+			 0, 1, 0, 0,
+			 0, 0, 1, 0,
+			 0, 0, 0, 1 };
+
+	static double coronalElements[16] = {
+			 1, 0, 0, 0,
+			 0, 0, 1, 0,
+			 0,-1, 0, 0,
+			 0, 0, 0, 1 };
+
+	static double sagittalElements[16] = {
+			 0, 0,-1, 0,
+			 1, 0, 0, 0,
+			 0,-1, 0, 0,
+			 0, 0, 0, 1 };
+
+	static double obliqueElements[16] = {
+			 1, 0, 0, 0,
+			 0, 0.866025, -0.5, 0,
+			 0, 0.5, 0.866025, 0,
+			 0, 0, 0, 1 };
+
+	// Set the slice orientation
+	vtkSmartPointer<vtkMatrix4x4> resliceAxes = vtkSmartPointer<vtkMatrix4x4>::New();
+	resliceAxes->DeepCopy(axialElements);
+	// Set the point through which to slice
+	resliceAxes->SetElement(0, 3, 0);
+	resliceAxes->SetElement(1, 3, 0);
+	resliceAxes->SetElement(2, 3, 70);
+
+
+
+	// Extract a slice in the desired orientation
+	vtkSmartPointer<vtkImageReslice> reslice = vtkSmartPointer<vtkImageReslice>::New();
+	reslice->SetInputData(m_vtkVolumeImageData);
+	reslice->SetOutputDimensionality(2);
+	reslice->SetResliceAxes(resliceAxes);
+	reslice->SetInterpolationModeToLinear();
+	reslice->Update();
+
+	// Create a greyscale lookup table
+	vtkSmartPointer<vtkLookupTable> table = vtkSmartPointer<vtkLookupTable>::New();
+	double *Range;
+	Range = table->GetRange();
+	Range[0];
+	Range[1];
+
+
+	Range = table->GetValueRange();
+	Range[0];
+	Range[1];
+
+
+	Range = table->GetTableRange();
+	Range[0];
+	Range[1];
+
+	Range = table->GetSaturationRange();
+	Range[0];
+	Range[1];
+
+	//Range = table->SetAboveRangeColor();
+	table->GetHueRange();
+
+	Range = table->GetAlphaRange();
+	Range[0];
+	Range[1];
+	//table->SetAlphaRange(0.3, 0.3);
+
+	table->SetRange(0, 65535); // image intensity range
+	//table->SetAlpha(0.0);
+	//table->GetRange();
+	table->SetNumberOfTableValues(65536);
+
+	double red = 0, green = 0, blue = 0;
+	for (int i = 0; i < table->GetNumberOfTableValues(); i++)
+	{
+		if (i < 20000)
+			red += 1.0 / 20000;
+
+		else if (i < 40000)
+			green += 1.0 / 20000;
+
+		else if (i < 60000)
+			blue += 1.0 / 20000;
+
+		table->SetTableValue(i, red, green, blue, 1);
+	}
+
+
+	//table->SetValueRange(0.0, 1.0); // from black to white
+	//table->GetValueRange();
+
+	//table->SetTableRange();
+	//table->GetTableRange();
+
+	//table->SetSaturationRange();
+	//table->GetSaturationRange();
+	//
+	//table->SetAboveRangeColor();
+	//table->GetAboveRangeColor();
+
+	//table->SetHueRange();
+	//table->GetHueRange();
+	//
+	//table->SetAlphaRange();
+	//table->GetAlphaRange();
+	//table->SetSaturationRange(0.0, 0.0); // no color saturation
+	//table->SetRampToLinear();
+	table->Build();
+
+
+	//// Map the image through the lookup table
+	vtkSmartPointer<vtkImageMapToColors> color = vtkSmartPointer<vtkImageMapToColors>::New();
+	color->SetLookupTable(table);
+	color->SetInputData(reslice->GetOutput());
+	color->Update();
+
+	//// Display the image
+	//vtkSmartPointer<vtkImageActor> actor = vtkSmartPointer<vtkImageActor>::New();
+	////actor->SetInputData(m_vtkVolumeImageData);
+	//actor->SetInputData(color->GetOutput());
+	//actor->SetOpacity(0.7);
+	//
+	////actor->GetProperty()->SetOpacity(0.2);
+	//double volumeOrigin[3];
+	////actor->SetDisplayExtent(0, 1023, 0, 1023, 0,70);
+	////actor->SetOpacity(0.3);
+	//actor->Modified();
+	//actor->SetPosition(0,0,70);
+	//actor->Update();
+	//m_vtkRenderer->AddActor(actor);
+
+
+	vtkSmartPointer<vtkDataSetMapper> mapper = vtkSmartPointer<vtkDataSetMapper>::New();
+	mapper->SetInputData(color->GetOutput());
+
+	double position[3] = { 0, 0, 70 };
+	vtkSmartPointer<vtkActor> nomal_actor = vtkSmartPointer<vtkActor>::New();
+	nomal_actor->SetMapper(mapper);
+	nomal_actor->GetProperty()->SetOpacity(0.7);
+	nomal_actor->SetPosition(position);
+	m_vtkRenderer->AddActor(nomal_actor);
+
+
+
+	vtkSmartPointer<vtkOutlineFilter> sliceOutlineFilter = vtkSmartPointer<vtkOutlineFilter>::New();
+	sliceOutlineFilter->SetInputData(color->GetOutput());
+	sliceOutlineFilter->Update();
+	vtkSmartPointer<vtkPolyDataMapper> sliceOutlineMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+	sliceOutlineMapper->SetInputData(sliceOutlineFilter->GetOutput());
+	vtkSmartPointer<vtkActor> vtksliceOutlineActor = vtkSmartPointer<vtkActor>::New();
+	vtksliceOutlineActor->SetMapper(sliceOutlineMapper);
+	vtksliceOutlineActor->GetProperty()->SetColor(1, 0, 0);
+	vtksliceOutlineActor->SetPosition(position);
+	m_vtkRenderer->AddActor(vtksliceOutlineActor);
+
+
+
+	vtkSmartPointer<vtkScalarBarActor> scalarBar = vtkSmartPointer<vtkScalarBarActor>::New();
+	scalarBar->SetLookupTable(table);
+	scalarBar->SetTitle("value");
+	scalarBar->SetNumberOfLabels(10);
+	scalarBar->SetLabelFormat("%10.2f");
+
+	//actor->SetOpacity(0.3);
+
+
+	m_vtkRenderer->AddActor2D(scalarBar);
+}
+
+void CMFCApplication1Dlg::setSliceImage2()
+{
+
+
+	vtkSmartPointer<vtkImageResliceMapper> im = vtkSmartPointer<vtkImageResliceMapper>::New();
+	im->SetInputData(m_vtkVolumeImageData);
+	im->SliceFacesCameraOn();
+	im->SliceAtFocalPointOn();
+	im->BorderOff();
+
+
+	vtkSmartPointer<vtkImageProperty> ip = vtkSmartPointer<vtkImageProperty>::New();
+	ip->SetColorWindow(2000);
+	ip->SetColorLevel(1000);
+	ip->SetAmbient(0.0);
+	ip->SetDiffuse(1.0);
+	ip->SetOpacity(.3);
+	ip->SetInterpolationTypeToLinear();
+	vtkSmartPointer<vtkImageSlice> ia = vtkSmartPointer<vtkImageSlice>::New();
+	
+	ia->SetMapper(im);
+	ia->SetProperty(ip);
+	
+	m_vtkRenderer->AddViewProp(ia);
+}
+
+void CMFCApplication1Dlg::setOrientAxesActor()
+{
+	vtkSmartPointer<vtkAxesActor> axesActor = vtkSmartPointer<vtkAxesActor>::New();
+	//< vtkOrientationMarkerWidget> orientationMarkerWidget = vtkSmartPointer< vtkOrientationMarkerWidget>::New();
+	m_orientationWidget = vtkSmartPointer< vtkOrientationMarkerWidget>::New();
+	m_orientationWidget->SetOrientationMarker(axesActor);
+
+	vtkSmartPointer< vtkRenderWindowInteractor> inter = m_vtkWindow->GetInteractor();
+	
+
+	m_orientationWidget->SetInteractor( inter );
+	m_orientationWidget->SetViewport(0,0, 0.1,0.1);
+	m_orientationWidget->SetEnabled(1);
+	m_orientationWidget->InteractiveOn();
+	
+}
+
+
+//ColorTransferFunction -> lookuptable
+void MakeLUTFromCTF(size_t const & tableSize, vtkLookupTable *lut)
+{
+	vtkSmartPointer<vtkColorTransferFunction> ctf =
+		vtkSmartPointer<vtkColorTransferFunction>::New();
+	ctf->SetColorSpaceToDiverging();
+	// Green to tan.
+	ctf->AddRGBPoint(0.0, 0.085, 0.532, 0.201);
+	ctf->AddRGBPoint(0.5, 0.865, 0.865, 0.865);
+	ctf->AddRGBPoint(1.0, 0.677, 0.492, 0.093);
+
+	lut->SetNumberOfTableValues(tableSize);
+	lut->Build();
+
+	for (size_t i = 0; i < tableSize; ++i)
+	{
+		double *rgb;
+		rgb = ctf->GetColor(static_cast<double>(i) / tableSize);
+		lut->SetTableValue(i, rgb);
+	}
+}
+
+
+class vtkSliceImageMove : public vtkInteractorStyle
+{
+
+};
