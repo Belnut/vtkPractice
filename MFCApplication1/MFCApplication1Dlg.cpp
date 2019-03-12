@@ -285,7 +285,7 @@ void CMFCApplication1Dlg::OnBnClickedButton1()
 	
 	this->volumePropInitialize();
 	//this->VtkDCMTest();
-	this->setROIVolumeDataOpenCV(0, 0, 1024, 1024, 0, 100);
+	this->setROIVolumeDataOpenCV(100, 100, 700, 700, 0, 100);
 	//this->setVtkOutLine();
 
 	//m_vtkRenderer->SetBackground(.0, .0, .0);
@@ -294,7 +294,7 @@ void CMFCApplication1Dlg::OnBnClickedButton1()
 	m_vtkWindow->Render();
 	//setOrientAxesActor();
 	setCustomOrientAxesActor();
-	//setSliceImageWidgetPreset();
+	setSliceImageWidgetPreset();
 	//m_vtkInteractor->SetDesiredUpdateRate(1000);
 
 	//m_vtkInteractor->Start();
@@ -1821,12 +1821,21 @@ void CMFCApplication1Dlg::setSliceImageWidgetPreset()
 {
 	m_vtkimagePlaneWidget = vtkSmartPointer<vtkImagePlaneWidget>::New();
 
-	m_vtkimagePlaneWidget->SetInteractor(m_vtkWindow->GetInteractor());
-	m_vtkimagePlaneWidget->RestrictPlaneToVolumeOn();
-	m_vtkimagePlaneWidget->SetInputConnection(m_vtkVolumeMapper->GetOutputPort());
-	m_vtkimagePlaneWidget->SetPlaneOrientationToZAxes();
-	m_vtkimagePlaneWidget->SetTextureVisibility(1);
+	
+	m_vtkimagePlaneWidget->TextureInterpolateOff();
 
+	m_vtkimagePlaneWidget->SetInputData(m_vtkVolumeImageData);
+
+	m_vtkimagePlaneWidget->SetInteractor(m_vtkWindow->GetInteractor());
+	m_vtkimagePlaneWidget->SetOrigin(400, 0, 0);
+	m_vtkimagePlaneWidget->SetPlaneOrientationToXAxes();
+	m_vtkimagePlaneWidget->SetSlicePosition(400);
+
+	m_vtkimagePlaneWidget->UpdatePlacement();
+	m_vtkimagePlaneWidget->DisplayTextOn();
+	m_vtkimagePlaneWidget->On();
+
+	
 	vtkSmartPointer<vtkImageData> reslice = m_vtkimagePlaneWidget->GetResliceOutput();
 	int extent[6];
 	reslice->GetExtent(extent);
