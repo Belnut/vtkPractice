@@ -42,6 +42,7 @@
 
 
 #include <vtkPlaneWidget.h>
+#include <vtkImagePlaneWidget.h>
 
 
 
@@ -288,10 +289,12 @@ void CMFCApplication1Dlg::OnBnClickedButton1()
 	//this->setVtkOutLine();
 
 	//m_vtkRenderer->SetBackground(.0, .0, .0);
-	setSliceImage();
+	//setSliceImage();
+
 	m_vtkWindow->Render();
 	//setOrientAxesActor();
 	setCustomOrientAxesActor();
+	//setSliceImageWidgetPreset();
 	//m_vtkInteractor->SetDesiredUpdateRate(1000);
 
 	//m_vtkInteractor->Start();
@@ -1814,6 +1817,25 @@ void CMFCApplication1Dlg::setCustomOrientAxesActor()
 
 }
 
+void CMFCApplication1Dlg::setSliceImageWidgetPreset()
+{
+	m_vtkimagePlaneWidget = vtkSmartPointer<vtkImagePlaneWidget>::New();
+
+	m_vtkimagePlaneWidget->SetInteractor(m_vtkWindow->GetInteractor());
+	m_vtkimagePlaneWidget->RestrictPlaneToVolumeOn();
+	m_vtkimagePlaneWidget->SetInputConnection(m_vtkVolumeMapper->GetOutputPort());
+	m_vtkimagePlaneWidget->SetPlaneOrientationToZAxes();
+	m_vtkimagePlaneWidget->SetTextureVisibility(1);
+
+	vtkSmartPointer<vtkImageData> reslice = m_vtkimagePlaneWidget->GetResliceOutput();
+	int extent[6];
+	reslice->GetExtent(extent);
+
+	cv::Mat x = cv::Mat(extent[1], extent[3], CV_16UC1, reslice->GetScalarPointer());
+
+	int a = x.rows;
+}
+
 
 //ColorTransferFunction -> lookuptable
 void MakeLUTFromCTF(size_t const & tableSize, vtkLookupTable *lut)
@@ -1840,5 +1862,4 @@ void MakeLUTFromCTF(size_t const & tableSize, vtkLookupTable *lut)
 
 class vtkSliceImageMove : public vtkInteractorStyle
 {
-
 };

@@ -62,6 +62,9 @@ public:
 	vtkSmartPointer< vtkImageSlice>					m_vtkImageSlice;
 
 
+	vtkSmartPointer<vtkImagePlaneWidget>			m_vtkimagePlaneWidget;
+
+
 	//custom made vtkObjects
 	vtkSmartPointer<pxikVTKVolumeOrientMarker>							m_pxikOrientationMarker = nullptr;
 
@@ -131,4 +134,6 @@ public:
 
 	void setOrientAxesActor();
 	void setCustomOrientAxesActor();
+
+	void setSliceImageWidgetPreset();
 };
