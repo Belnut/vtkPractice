@@ -45,6 +45,12 @@
 
 
 
+
+
+
+
+
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -284,7 +290,8 @@ void CMFCApplication1Dlg::OnBnClickedButton1()
 	//m_vtkRenderer->SetBackground(.0, .0, .0);
 	setSliceImage();
 	m_vtkWindow->Render();
-	setOrientAxesActor();
+	//setOrientAxesActor();
+	setCustomOrientAxesActor();
 	//m_vtkInteractor->SetDesiredUpdateRate(1000);
 
 	//m_vtkInteractor->Start();
@@ -1772,6 +1779,8 @@ void CMFCApplication1Dlg::setOrientAxesActor()
 {
 	vtkSmartPointer<vtkAxesActor> axesActor = vtkSmartPointer<vtkAxesActor>::New();
 	//< vtkOrientationMarkerWidget> orientationMarkerWidget = vtkSmartPointer< vtkOrientationMarkerWidget>::New();
+
+	
 	m_orientationWidget = vtkSmartPointer< vtkOrientationMarkerWidget>::New();
 	m_orientationWidget->SetOrientationMarker(axesActor);
 
@@ -1783,6 +1792,26 @@ void CMFCApplication1Dlg::setOrientAxesActor()
 	m_orientationWidget->SetEnabled(1);
 	m_orientationWidget->InteractiveOn();
 	
+}
+
+void CMFCApplication1Dlg::setCustomOrientAxesActor()
+{
+
+	vtkSmartPointer<vtkAxesActor> axesActor = vtkSmartPointer<vtkAxesActor>::New();
+	//< vtkOrientationMarkerWidget> orientationMarkerWidget = vtkSmartPointer< vtkOrientationMarkerWidget>::New();
+
+	
+	m_pxikOrientationMarker = vtkSmartPointer<pxikVTKVolumeOrientMarker>::New();
+	m_pxikOrientationMarker->SetOrientationMarker(axesActor);
+
+	vtkSmartPointer< vtkRenderWindowInteractor> inter = m_vtkWindow->GetInteractor();
+
+
+	m_pxikOrientationMarker->SetInteractor(inter);
+	m_pxikOrientationMarker->SetViewport(0, 0, 0.1, 0.1);
+	m_pxikOrientationMarker->SetEnabled(1);
+	m_pxikOrientationMarker->InteractiveOn();
+
 }
 
 
