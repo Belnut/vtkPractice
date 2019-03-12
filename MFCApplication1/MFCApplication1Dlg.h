@@ -3,7 +3,7 @@
 //
 
 #pragma once
-
+#include "pxikVolumeOrientMarker.h"
 
 // CMFCApplication1Dlg 대화 상자
 class CMFCApplication1Dlg : public CDialogEx
@@ -62,6 +62,8 @@ public:
 	vtkSmartPointer< vtkImageSlice>					m_vtkImageSlice;
 
 
+	//custom made vtkObjects
+	vtkSmartPointer<pxikVTKVolumeOrientMarker>							m_pxikOrientationMarker = nullptr;
 
 
 
@@ -128,4 +130,5 @@ public:
 	void setSliceImage2();
 
 	void setOrientAxesActor();
+	void setCustomOrientAxesActor();
 };

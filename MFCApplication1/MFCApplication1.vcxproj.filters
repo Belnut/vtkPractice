@@ -39,6 +39,15 @@
     <ClInclude Include="stdafx.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="pxikVolumeTrackBallCamera.h">
+      <Filter>헤더 파일\CustomVTKClass-headFile</Filter>
+    </ClInclude>
+    <ClInclude Include="pxikVolumeOrientMarker.h">
+      <Filter>헤더 파일\CustomVTKClass-headFile</Filter>
+    </ClInclude>
+    <ClInclude Include="pxikVolumeSliceWidget.h">
+      <Filter>헤더 파일\CustomVTKClass-headFile</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MFCApplication1.cpp">
@@ -51,6 +60,15 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="vtkCTIFFImageReader.cpp">
+      <Filter>소스 파일\CustomVTKClass-SrcFile</Filter>
+    </ClCompile>
+    <ClCompile Include="pxikVolumeTrackBallCamera.cpp">
+      <Filter>소스 파일\CustomVTKClass-SrcFile</Filter>
+    </ClCompile>
+    <ClCompile Include="pxikVolumeOrientMarker.cpp">
+      <Filter>소스 파일\CustomVTKClass-SrcFile</Filter>
+    </ClCompile>
+    <ClCompile Include="pxikVolumeSliceWidget.cpp">
       <Filter>소스 파일\CustomVTKClass-SrcFile</Filter>
     </ClCompile>
   </ItemGroup>

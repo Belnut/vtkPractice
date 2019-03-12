@@ -188,6 +188,9 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="pxikVolumeOrientMarker.h" />
+    <ClInclude Include="pxikVolumeSliceWidget.h" />
+    <ClInclude Include="pxikVolumeTrackBallCamera.h" />
     <ClInclude Include="vtkCTIFFImageReader.h" />
     <ClInclude Include="MFCApplication1.h" />
     <ClInclude Include="MFCApplication1Dlg.h" />
@@ -196,6 +199,9 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="pxikVolumeOrientMarker.cpp" />
+    <ClCompile Include="pxikVolumeSliceWidget.cpp" />
+    <ClCompile Include="pxikVolumeTrackBallCamera.cpp" />
     <ClCompile Include="vtkCTIFFImageReader.cpp" />
     <ClCompile Include="MFCApplication1.cpp" />
     <ClCompile Include="MFCApplication1Dlg.cpp" />
