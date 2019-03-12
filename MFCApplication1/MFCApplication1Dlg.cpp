@@ -1523,6 +1523,7 @@ void CMFCApplication1Dlg::setROIVolumeDataOpenCV(int topLeftX, int topLeftY, int
 	}
 #endif
 
+
 	m_vtkVolumeMapper->SetInputData(m_vtkVolumeImageData);
 	m_vtkVolumeMapper->SetBlendModeToComposite();
 
@@ -1548,12 +1549,12 @@ void CMFCApplication1Dlg::setROIVolumeDataOpenCV(int topLeftX, int topLeftY, int
 void CMFCApplication1Dlg::setVtkOutLine()
 {
 	m_vtkOutlineFilter = vtkSmartPointer<vtkOutlineFilter>::New();
-	m_vtkOutlineFilter->SetInputData(m_vtkVolumeImageData);
+	m_vtkOutlineFilter->SetInputConnection(m_vtkVolumeMapper->GetOutputPort());
 
 	m_vtkOutlineFilter->Update();
 
 	m_vtkPolyDataMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-	m_vtkPolyDataMapper->SetInputData(m_vtkOutlineFilter->GetOutput());
+	m_vtkPolyDataMapper->SetInputConnection(m_vtkOutlineFilter->GetOutputPort());
 
 
 	m_vtkActor = vtkSmartPointer<vtkActor>::New();
@@ -1615,7 +1616,7 @@ void CMFCApplication1Dlg::setSliceImage()
 
 	// Extract a slice in the desired orientation
 	vtkSmartPointer<vtkImageReslice> reslice = vtkSmartPointer<vtkImageReslice>::New();
-	reslice->SetInputData(m_vtkVolumeImageData);
+	reslice->SetInputConnection(m_vtkVolumeMapper->GetOutputPort());
 	reslice->SetOutputDimensionality(2);
 	reslice->SetResliceAxes(resliceAxes);
 	reslice->SetInterpolationModeToLinear();
@@ -1696,13 +1697,13 @@ void CMFCApplication1Dlg::setSliceImage()
 	//// Map the image through the lookup table
 	vtkSmartPointer<vtkImageMapToColors> color = vtkSmartPointer<vtkImageMapToColors>::New();
 	color->SetLookupTable(table);
-	color->SetInputData(reslice->GetOutput());
+	color->SetInputConnection(reslice->GetOutputPort());
 	color->Update();
 
 	//// Display the image
 	//vtkSmartPointer<vtkImageActor> actor = vtkSmartPointer<vtkImageActor>::New();
-	////actor->SetInputData(m_vtkVolumeImageData);
-	//actor->SetInputData(color->GetOutput());
+	////actor->SetInputConnection(m_vtkVolumeImageData);
+	//actor->SetInputConnection(color->GetOutput());
 	//actor->SetOpacity(0.7);
 	//
 	////actor->GetProperty()->SetOpacity(0.2);
@@ -1716,7 +1717,8 @@ void CMFCApplication1Dlg::setSliceImage()
 
 
 	vtkSmartPointer<vtkDataSetMapper> mapper = vtkSmartPointer<vtkDataSetMapper>::New();
-	mapper->SetInputData(color->GetOutput());
+	mapper->SetInputConnection(color->GetOutputPort());
+	color->Update();
 
 	double position[3] = { 0, 0, 70 };
 	vtkSmartPointer<vtkActor> nomal_actor = vtkSmartPointer<vtkActor>::New();
@@ -1728,10 +1730,11 @@ void CMFCApplication1Dlg::setSliceImage()
 
 
 	vtkSmartPointer<vtkOutlineFilter> sliceOutlineFilter = vtkSmartPointer<vtkOutlineFilter>::New();
-	sliceOutlineFilter->SetInputData(color->GetOutput());
+	sliceOutlineFilter->SetInputConnection(color->GetOutputPort());
 	sliceOutlineFilter->Update();
 	vtkSmartPointer<vtkPolyDataMapper> sliceOutlineMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-	sliceOutlineMapper->SetInputData(sliceOutlineFilter->GetOutput());
+	sliceOutlineMapper->SetInputConnection(sliceOutlineFilter->GetOutputPort());
+	sliceOutlineMapper->Update();
 	vtkSmartPointer<vtkActor> vtksliceOutlineActor = vtkSmartPointer<vtkActor>::New();
 	vtksliceOutlineActor->SetMapper(sliceOutlineMapper);
 	vtksliceOutlineActor->GetProperty()->SetColor(1, 0, 0);
@@ -1757,7 +1760,8 @@ void CMFCApplication1Dlg::setSliceImage2()
 
 
 	vtkSmartPointer<vtkImageResliceMapper> im = vtkSmartPointer<vtkImageResliceMapper>::New();
-	im->SetInputData(m_vtkVolumeImageData);
+	im->SetInputConnection(m_vtkVolumeMapper->GetOutputPort());
+
 	im->SliceFacesCameraOn();
 	im->SliceAtFocalPointOn();
 	im->BorderOff();
