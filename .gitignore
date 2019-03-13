@@ -259,3 +259,7 @@ publish/
 # Python Tools for Visual Studio (PTVS)
 #__pycache__/
 #*.pyc
+MFCApplication1/MFCApplication1Dlg_REMOTE_1328.h
+MFCApplication1/MFCApplication1Dlg_LOCAL_1328.h
+MFCApplication1/MFCApplication1Dlg_BASE_1328.h
+MFCApplication1/MFCApplication1Dlg_BACKUP_1328.h

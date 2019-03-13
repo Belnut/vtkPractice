@@ -135,5 +135,7 @@ public:
 	void setOrientAxesActor();
 	void setCustomOrientAxesActor();
 
+
 	void setSliceImageWidgetPreset();
+
 };

@@ -52,6 +52,12 @@
 
 
 
+
+
+
+
+
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -1844,7 +1850,6 @@ void CMFCApplication1Dlg::setSliceImageWidgetPreset()
 
 	int a = x.rows;
 }
-
 
 //ColorTransferFunction -> lookuptable
 void MakeLUTFromCTF(size_t const & tableSize, vtkLookupTable *lut)
