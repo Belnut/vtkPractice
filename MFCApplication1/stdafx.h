@@ -158,3 +158,6 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 
 #include <vtkImageSlice.h>
 #include <vtkInteractorStyleImage.h>
+
+#include <vtkButtonWidget.h>
+#include <vtkTexturedButtonRepresentation2D.h>

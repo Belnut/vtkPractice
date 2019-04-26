@@ -31,29 +31,10 @@ void pxikVTKVolumeOrientMarker::SetCursor(int state)
 {
 }
 
-//void pxikVTKVolumeOrientMarker::UpdateOutline()
-//{
-//}
-
 void pxikVTKVolumeOrientMarker::MoveWidget(int X, int Y)
 {
 }
 
-//void pxikVTKVolumeOrientMarker::ResizeTopLeft(int X, int Y)
-//{
-//}
-//
-//void pxikVTKVolumeOrientMarker::ResizeTopRight(int X, int Y)
-//{
-//}
-//
-//void pxikVTKVolumeOrientMarker::ResizeBottomLeft(int X, int Y)
-//{
-//}
-//
-//void pxikVTKVolumeOrientMarker::ResizeBottomRight(int X, int Y)
-//{
-//}
 
 void pxikVTKVolumeOrientMarker::ExecuteCameraUpdateEvent(vtkObject * o, unsigned long event, void * calldata)
 {

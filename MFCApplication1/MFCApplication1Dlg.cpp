@@ -44,13 +44,21 @@
 #include <vtkPlaneWidget.h>
 #include <vtkImagePlaneWidget.h>
 
+#include <vtkActor2D.h>
+#include <vtkProperty2D.h>
 
+#include <vtkImageMapper.h>
 
+#include <vtkTexturedActor2D.h>
 
+#include <vtkSphereSource.h>
+#include <vtkRegularPolygonSource.h>
 
+#include <vtkBalloonRepresentation.h>
+#include <vtkBalloonWidget.h>
 
-
-
+#include "pxikVTKUI.h"
+#include "pxikVTKUIWidgetRepresentation.h"
 
 
 
@@ -104,6 +112,10 @@ CMFCApplication1Dlg::CMFCApplication1Dlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_MFCAPPLICATION1_DIALOG, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+}
+
+CMFCApplication1Dlg::~CMFCApplication1Dlg()
+{
 }
 
 void CMFCApplication1Dlg::DoDataExchange(CDataExchange* pDX)
@@ -288,24 +300,31 @@ void CMFCApplication1Dlg::OnBnClickedButton1()
 
 	start = clock();
 
-	
+	//balloonTest();
+
 	this->volumePropInitialize();
 	//this->VtkDCMTest();
 	this->setROIVolumeDataOpenCV(100, 100, 700, 700, 0, 100);
 	//this->setVtkOutLine();
 
 	//m_vtkRenderer->SetBackground(.0, .0, .0);
-	//setSliceImage();
+	
 
 	m_vtkWindow->Render();
 	//setOrientAxesActor();
-	setCustomOrientAxesActor();
-	setSliceImageWidgetPreset();
+	//setSliceImage();
+	//setSliceImageWidgetCustom();
+	//setCustomOrientAxesActor();
+	//ddButton();
+	addCustomButton();
+
 	//m_vtkInteractor->SetDesiredUpdateRate(1000);
 
 	//m_vtkInteractor->Start();
-	
-	
+
+	//set2DPlane();
+	//set2DPlaneimage();
+	//m_vtkInteractor->Start();
 	
 	end = clock();
 	result = (double)(end - start);
@@ -315,7 +334,10 @@ void CMFCApplication1Dlg::OnBnClickedButton1()
 	str.Format(_T("%f"), result);
 
 	view->SetWindowTextW(str);
-	//this->convertDICOMToTIFF();
+
+	//balloonTest();
+	addPanel();
+	
 }
 
 //Dlg Frame 크기 변경 시 발생하는 이벤트
@@ -952,7 +974,7 @@ vtkSmartPointer<vtkImageData> CMFCApplication1Dlg::TIFFReader()
 
 	
 	return buffer;
-	
+
 }
 
 
@@ -1308,7 +1330,7 @@ void CMFCApplication1Dlg::initialize(HWND parent)
 	m_vtkRenderer = vtkSmartPointer< vtkRenderer>::New();
 	m_vtkInteractor = vtkSmartPointer< vtkRenderWindowInteractor>::New();
 
-	m_vtkInteractor->SetInteractorStyle(vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New());
+	m_vtkInteractor->SetInteractorStyle(vtkSmartPointer<pxikVolumeTrackBallCamera>::New());
 
 	m_vtkRenderer->SetBackground(0.1, 0.2, 0.4);
 
@@ -1611,7 +1633,7 @@ void CMFCApplication1Dlg::setSliceImage()
 
 	// Set the slice orientation
 	vtkSmartPointer<vtkMatrix4x4> resliceAxes = vtkSmartPointer<vtkMatrix4x4>::New();
-	resliceAxes->DeepCopy(axialElements);
+	resliceAxes->DeepCopy(sagittalElements);
 	// Set the point through which to slice
 	resliceAxes->SetElement(0, 3, 0);
 	resliceAxes->SetElement(1, 3, 0);
@@ -1628,7 +1650,7 @@ void CMFCApplication1Dlg::setSliceImage()
 	reslice->Update();
 
 	// Create a greyscale lookup table
-	vtkSmartPointer<vtkLookupTable> table = vtkSmartPointer<vtkLookupTable>::New();
+	table = vtkSmartPointer<vtkLookupTable>::New();
 	double *Range;
 	Range = table->GetRange();
 	Range[0];
@@ -1751,7 +1773,8 @@ void CMFCApplication1Dlg::setSliceImage()
 	scalarBar->SetTitle("value");
 	scalarBar->SetNumberOfLabels(10);
 	scalarBar->SetLabelFormat("%10.2f");
-
+	scalarBar->SetHeight(.2);
+	scalarBar->SetWidth(.2);
 	//actor->SetOpacity(0.3);
 
 
@@ -1820,6 +1843,7 @@ void CMFCApplication1Dlg::setCustomOrientAxesActor()
 	m_pxikOrientationMarker->SetViewport(0, 0, 0.1, 0.1);
 	m_pxikOrientationMarker->SetEnabled(1);
 	m_pxikOrientationMarker->InteractiveOn();
+	m_pxikOrientationMarker->On();
 
 }
 
@@ -1851,6 +1875,27 @@ void CMFCApplication1Dlg::setSliceImageWidgetPreset()
 	int a = x.rows;
 }
 
+void CMFCApplication1Dlg::setSliceImageWidgetCustom()
+{
+	m_pxikVolumeSliceWidget = vtkSmartPointer<pxikVolumeSliceWidget>::New();
+
+
+	m_pxikVolumeSliceWidget->TextureInterpolateOff();
+
+	m_pxikVolumeSliceWidget->SetInputData(m_vtkVolumeImageData);
+
+	m_pxikVolumeSliceWidget->SetInteractor(m_vtkWindow->GetInteractor());
+	m_pxikVolumeSliceWidget->SetOrigin(0, 0, 50);
+	m_pxikVolumeSliceWidget->SetPlaneOrientationToZAxes();
+	m_pxikVolumeSliceWidget->SetSlicePosition(70);
+
+	m_pxikVolumeSliceWidget->SetLookupTable(table);
+	//m_pxikVolumeSliceWidget->UpdatePlacement();
+	m_pxikVolumeSliceWidget->DisplayTextOn();
+	m_pxikVolumeSliceWidget->On();
+
+	m_vtkWindow->DoubleBufferOn();
+}
 //ColorTransferFunction -> lookuptable
 void MakeLUTFromCTF(size_t const & tableSize, vtkLookupTable *lut)
 {
@@ -1871,8 +1916,344 @@ void MakeLUTFromCTF(size_t const & tableSize, vtkLookupTable *lut)
 		rgb = ctf->GetColor(static_cast<double>(i) / tableSize);
 		lut->SetTableValue(i, rgb);
 	}
+
+
+
 }
 
+
+void CMFCApplication1Dlg::addButton()
+{
+
+	vtkSmartPointer<vtkImageData> image1 =
+		vtkSmartPointer<vtkImageData>::New();
+	vtkSmartPointer<vtkImageData> image2 =
+		vtkSmartPointer<vtkImageData>::New();
+	
+	cv::Mat resliceOnImage	 = cv::imread("C:\\Users\\User1\\Downloads\\ResliceOn.png",  cv::IMREAD_GRAYSCALE);
+	cv::Mat resliceOffImage  = cv::imread("C:\\Users\\User1\\Downloads\\ResliceOff.png", cv::IMREAD_GRAYSCALE);
+
+	CreateImage(image1, resliceOnImage.data, 50, 50);
+	CreateImage(image2, resliceOffImage.data, 50, 50);
+
+
+
+	vtkSmartPointer<vtkTexturedButtonRepresentation2D> buttonRepresentation =
+		vtkSmartPointer<vtkTexturedButtonRepresentation2D>::New();
+	buttonRepresentation->SetNumberOfStates(2);
+	buttonRepresentation->SetButtonTexture(0, image1);
+	buttonRepresentation->SetButtonTexture(1, image2);
+
+
+	vtkSmartPointer<vtkButtonWidget> buttonWidget =
+		vtkSmartPointer<vtkButtonWidget>::New();
+	buttonWidget->SetInteractor(m_vtkInteractor);
+	buttonWidget->SetRepresentation(buttonRepresentation);
+
+
+	// Place the widget. Must be done after a render so that the
+	// viewport is defined.
+	// Here the widget placement is in normalized display coordinates
+	vtkSmartPointer<vtkCoordinate> upperRight =
+		vtkSmartPointer<vtkCoordinate>::New();
+	upperRight->SetCoordinateSystemToNormalizedDisplay();
+	upperRight->SetValue(1.0, 1.0);
+
+	double bds[6];
+	double sz = 50.0;
+	bds[0] = upperRight->GetComputedDisplayValue(m_vtkRenderer)[0] - sz -10;
+	bds[1] = bds[0] + sz;
+	bds[2] = upperRight->GetComputedDisplayValue(m_vtkRenderer)[1] - sz - 10;
+	bds[3] = bds[2] + sz;
+	bds[4] = bds[5] = 0.0;
+
+	// Scale to 1, default is .5
+	buttonRepresentation->SetPlaceFactor(0);
+	buttonRepresentation->PlaceWidget(bds);
+
+	buttonWidget->On();
+
+	m_vtkInteractor->Start();
+
+}
+
+void CMFCApplication1Dlg::addCustomButton()
+{
+	TestClass* testclass = new TestClass();
+
+	vtkSmartPointer<vtkImageData> image1 =
+		vtkSmartPointer<vtkImageData>::New();
+	vtkSmartPointer<vtkImageData> image2 =
+		vtkSmartPointer<vtkImageData>::New();
+
+	unsigned char banana[3] = { 227, 207, 87 };
+	unsigned char tomato[3] = { 255, 99, 71 };
+
+	cv::Mat resliceOnImage = cv::imread("C:\\Users\\User1\\Downloads\\ResliceOn.png", cv::IMREAD_GRAYSCALE);
+	cv::Mat resliceOffImage = cv::imread("C:\\Users\\User1\\Downloads\\ResliceOff.png", cv::IMREAD_GRAYSCALE);
+
+	CreateImage(image1, resliceOnImage.data, 50, 50);
+	CreateImage(image2, resliceOffImage.data, 50, 50);
+
+	vtkSmartPointer<vtkTexturedButtonRepresentation2D> buttonRepresentation =
+		vtkSmartPointer<vtkTexturedButtonRepresentation2D>::New();
+	buttonRepresentation->SetNumberOfStates(2);
+	buttonRepresentation->SetButtonTexture(0, image1);
+	buttonRepresentation->SetButtonTexture(1, image2);
+
+
+	m_buttonWidget = vtkSmartPointer<pxikVTKButtonWidget>::New();
+	m_buttonWidget->SetInteractor(m_vtkInteractor);
+	m_buttonWidget->SetRepresentation(buttonRepresentation);
+	//buttonWidget->setEventFunction(testclass, &TestClass::helloWorld );
+
+	// Place the widget. Must be done after a render so that the
+	// viewport is defined.
+	// Here the widget placement is in normalized display coordinates
+	vtkSmartPointer<vtkCoordinate> upperRight =
+		vtkSmartPointer<vtkCoordinate>::New();
+	upperRight->SetCoordinateSystemToNormalizedDisplay();
+	upperRight->SetValue(1.0, 1.0);
+
+	double bds[6];
+	double sz = 100.0;
+	bds[0] = upperRight->GetComputedDisplayValue(m_vtkRenderer)[0] - sz - 10;
+	bds[1] = bds[0] + sz;
+	bds[2] = upperRight->GetComputedDisplayValue(m_vtkRenderer)[1] - sz*2 - 10;
+	bds[3] = bds[2] + sz*2;
+	bds[4] = bds[5] = 0.0;
+
+	// Scale to 1, default is .5
+	buttonRepresentation->SetPlaceFactor(1);
+	buttonRepresentation->PlaceWidget(bds);
+
+	m_buttonWidget->On();
+
+	
+}
+
+
+
+void CMFCApplication1Dlg::CreateImage(vtkSmartPointer<vtkImageData> image, void* data, int width, int height)
+{
+	// Specify the size of the image data
+	image->SetDimensions(width, height, 1);
+	image->AllocateScalars(VTK_UNSIGNED_CHAR, 3);
+
+	int* dims = image->GetDimensions();
+
+	unsigned char * dataPtr = (unsigned char *) data;
+	// Fill the image with
+	for (int y = 0; y < dims[1]; y++)
+	{
+		for (int x = 0; x < dims[0]; x++)
+		{
+			unsigned char* pixel =
+				static_cast<unsigned char*>(image->GetScalarPointer(x, y, 0));
+
+			pixel[0] = dataPtr[x + y * 50];
+			pixel[1] = dataPtr[x + y * 50];
+			pixel[2] = dataPtr[x + y * 50];
+		}
+	}
+}
+
+void CMFCApplication1Dlg::ResliceOn()
+{
+	m_pxikVolumeSliceWidget->On();
+}
+
+void CMFCApplication1Dlg::ResliceOff()
+{
+	m_pxikVolumeSliceWidget->Off();
+}
+
+void CMFCApplication1Dlg::set2DPlane()
+{
+	vtkImageData * image = vtkImageData::New();
+
+	image->SetDimensions(100, 100, 1);
+	image->AllocateScalars(VTK_UNSIGNED_CHAR, 3);
+
+	int * dims = image->GetDimensions();
+
+	for (int y = 0; y < 100; y++)
+	{
+		for (int x = 0; x < 100; x++)
+		{
+			unsigned char* pixel = static_cast<unsigned char*>(image->GetScalarPointer(x, y, 0));
+			
+			if (x < 10 || y < 10 || x>90 || y >90)
+			{
+				pixel[0] = 255;
+				pixel[1] = 0;
+				pixel[2] = 0;
+			}
+			else
+			{
+				pixel[0] = 0;
+				pixel[1] = 0;
+				pixel[2] = 255;
+			}
+		}
+	}
+
+	vtkImageMapper* imageMapper= vtkImageMapper::New();
+	imageMapper->SetInputData(image);
+	imageMapper->SetColorWindow(255);
+	imageMapper->SetColorLevel(127.5);
+	image->UnRegister(0);
+
+	vtkActor2D* imageActor = vtkActor2D::New();
+	imageActor->SetMapper(imageMapper);
+	imageMapper->UnRegister(0);
+
+	m_vtkRenderer->AddActor2D(imageActor);
+	imageActor->SetPosition(100, 100);
+	imageActor->GetProperty()->SetOpacity(1);
+	imageActor->UnRegister(0);
+
+	imageActor->SetLayerNumber(1);
+}
+
+void CMFCApplication1Dlg::set2DPlaneimage()
+{
+	vtkImageData * image = vtkImageData::New();
+
+	image->SetDimensions(50, 50, 1);
+	image->AllocateScalars(VTK_UNSIGNED_CHAR, 3);
+
+	int * dims = image->GetDimensions();
+
+	for (int y = 0; y < 50; y++)
+	{
+		for (int x = 0; x < 50; x++)
+		{
+			unsigned char* pixel = static_cast<unsigned char*>(image->GetScalarPointer(x, y, 0));
+
+			if (x < 5 || y < 5 || x>45 || y >45)
+			{
+				pixel[0] = 0;
+				pixel[1] = 255;
+				pixel[2] = 0;
+			}
+			else
+			{
+				pixel[0] = 0;
+				pixel[1] = 255;
+				pixel[2] = 0;
+			}
+		}
+	}
+
+	vtkImageMapper* imageMapper = vtkImageMapper::New();
+	imageMapper->SetInputData(image);
+	imageMapper->SetColorWindow(255);
+	imageMapper->SetColorLevel(127.5);
+	image->UnRegister(0);
+
+	vtkActor2D* imageActor = vtkActor2D::New();
+	imageActor->SetMapper(imageMapper);
+	imageMapper->UnRegister(0);
+
+
+	m_vtkRenderer->AddActor2D(imageActor);
+	imageActor->SetPosition(125, 125);
+	imageActor->GetProperty()->SetOpacity(1);
+	imageActor->UnRegister(0);
+
+	int loc = imageActor->GetLayerNumber();
+
+}
+
+void CMFCApplication1Dlg::balloonTest()
+{
+	vtkSmartPointer<vtkSphereSource> sphereSource =
+		vtkSmartPointer<vtkSphereSource>::New();
+	sphereSource->SetCenter(-4.0, 0.0, 0.0);
+	sphereSource->SetRadius(4.0);
+	sphereSource->Update();
+
+	vtkSmartPointer<vtkPolyDataMapper> sphereMapper =
+		vtkSmartPointer<vtkPolyDataMapper>::New();
+	sphereMapper->SetInputConnection(sphereSource->GetOutputPort());
+
+	vtkSmartPointer<vtkActor> sphereActor =
+		vtkSmartPointer<vtkActor>::New();
+	sphereActor->SetMapper(sphereMapper);
+
+	// Regular Polygon
+	vtkSmartPointer<vtkRegularPolygonSource> regularPolygonSource =
+		vtkSmartPointer<vtkRegularPolygonSource>::New();
+	regularPolygonSource->SetCenter(4.0, 0.0, 0.0);
+	regularPolygonSource->SetRadius(4.0);
+	regularPolygonSource->Update();
+
+	vtkSmartPointer<vtkPolyDataMapper> regularPolygonMapper =
+		vtkSmartPointer<vtkPolyDataMapper>::New();
+	regularPolygonMapper->SetInputConnection(regularPolygonSource->GetOutputPort());
+
+	vtkSmartPointer<vtkActor> regularPolygonActor =
+		vtkSmartPointer<vtkActor>::New();
+	regularPolygonActor->SetMapper(regularPolygonMapper);
+
+	// A renderer and render window
+	vtkSmartPointer<vtkRenderer> renderer =
+		vtkSmartPointer<vtkRenderer>::New();
+	vtkSmartPointer<vtkRenderWindow> renderWindow =
+		vtkSmartPointer<vtkRenderWindow>::New();
+	renderWindow->AddRenderer(renderer);
+
+	// An interactor
+	vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor =
+		vtkSmartPointer<vtkRenderWindowInteractor>::New();
+	renderWindowInteractor->SetRenderWindow(renderWindow);
+
+	// Create the widget
+	vtkSmartPointer<vtkBalloonRepresentation> balloonRep =
+		vtkSmartPointer<vtkBalloonRepresentation>::New();
+	balloonRep->SetBalloonLayoutToImageRight();
+
+	vtkSmartPointer<vtkBalloonWidget> balloonWidget =
+		vtkSmartPointer<vtkBalloonWidget>::New();
+	balloonWidget->SetInteractor(renderWindowInteractor);
+	balloonWidget->SetRepresentation(balloonRep);
+	balloonWidget->AddBalloon(sphereActor,
+		"This is a sphere", NULL);
+	balloonWidget->AddBalloon(regularPolygonActor,
+		"This is a regular polygon", NULL);
+
+	// Add the actors to the scene
+	renderer->AddActor(sphereActor);
+	renderer->AddActor(regularPolygonActor);
+
+	// Render
+	renderWindow->Render();
+	balloonWidget->EnabledOn();
+
+	// Begin mouse interaction
+	renderWindowInteractor->Start();
+}
+
+
+void CMFCApplication1Dlg::addPanel()
+{
+	this->m_pxikVTKUI = vtkSmartPointer<pxikVTKUI>::New();
+	this->m_pxikVTKUIRepresentation = vtkSmartPointer<pxikVTKUIWidgetRepresentation>::New();
+
+	m_pxikVTKUIRepresentation->setMargin(
+		pxikVTKUIWidgetRepresentation::marginTop |
+		pxikVTKUIWidgetRepresentation::marginBtm |
+		pxikVTKUIWidgetRepresentation::marginLeft |
+		pxikVTKUIWidgetRepresentation::marginRight,
+		10);
+
+	m_pxikVTKUI->SetInteractor(m_vtkInteractor);
+	m_pxikVTKUI->SetRepresentation(m_pxikVTKUIRepresentation);
+
+	m_pxikVTKUI->EnabledOn();
+	m_vtkInteractor->Start();
+}
 
 class vtkSliceImageMove : public vtkInteractorStyle
 {

@@ -4,20 +4,28 @@
 
 #pragma once
 #include "pxikVolumeOrientMarker.h"
+#include "pxikVolumeTrackBallCamera.h"
+#include "pxikVolumeSliceWidget.h"
+#include "pxikVTKButtonWidget.h"
+
+#include "pxikVTKUI.h"
+#include "pxikVTKUIWidgetRepresentation.h"
+
 
 // CMFCApplication1Dlg 대화 상자
 class CMFCApplication1Dlg : public CDialogEx
 {
-// 생성입니다.
+	// 생성입니다.
 public:
 	CMFCApplication1Dlg(CWnd* pParent = nullptr);	// 표준 생성자입니다.
+	~CMFCApplication1Dlg();
 
-// 대화 상자 데이터입니다.
+	// 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_MFCAPPLICATION1_DIALOG };
 #endif
 
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 지원입니다.
 
 
@@ -63,17 +71,26 @@ public:
 
 
 	vtkSmartPointer<vtkImagePlaneWidget>			m_vtkimagePlaneWidget;
+	
+
+
+
 
 
 	//custom made vtkObjects
-	vtkSmartPointer<pxikVTKVolumeOrientMarker>							m_pxikOrientationMarker = nullptr;
-
-
+	vtkSmartPointer<pxikVTKVolumeOrientMarker>		m_pxikOrientationMarker = nullptr;
+	vtkSmartPointer<pxikVolumeTrackBallCamera>		m_pxikVolumeTrackBallCamera = nullptr;
+	vtkSmartPointer<pxikVolumeSliceWidget>			m_pxikVolumeSliceWidget = nullptr;
+	vtkSmartPointer<pxikVTKButtonWidget>			m_buttonWidget = nullptr;
+	vtkSmartPointer<pxikVTKUI>						m_pxikVTKUI = nullptr;
+	vtkSmartPointer<pxikVTKUIWidgetRepresentation>	m_pxikVTKUIRepresentation = nullptr;
 
 	//TestObject;
 	vtkCubeSource*				m_vtkTestCubeSource = NULL;
 	vtkPolyDataMapper*			m_vtkTestPolyDataMapper = NULL;
 	vtkActor*					m_vtkTestActor = NULL;
+
+	vtkSmartPointer<vtkLookupTable> table;
 
 
 	vtkSmartPointer<vtkPlane>						m_zTopClipPlane;
@@ -96,7 +113,7 @@ public:
 	afx_msg void OnBnClickedButton1();
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 
-private :
+private:
 	void VtkConeTest();
 	void VtkCubeTest();
 	void SmartVtkCubeTest();
@@ -138,4 +155,19 @@ public:
 
 	void setSliceImageWidgetPreset();
 
+	void setSliceImageWidgetCustom();
+
+	void addButton();
+	void addCustomButton();
+
+	void CreateImage(vtkSmartPointer<vtkImageData> image, void* data, int x, int y);
+	void ResliceOn();
+	void ResliceOff();
+
+	void set2DPlane();
+	void set2DPlaneimage();
+
+	void balloonTest();
+
+	void addPanel();
 };

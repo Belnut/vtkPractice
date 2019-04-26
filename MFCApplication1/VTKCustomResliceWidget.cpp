@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "pxikVolumeSliceWidget.h"
+#include "VTKCustomResliceWidget.h"
 
 #include <vtkActor.h>
 #include <vtkAlgorithmOutput.h>
@@ -14,7 +14,7 @@
 #include <vtkImageReslice.h>
 #include <vtkLookupTable.h>
 #include <vtkMath.h>
-//#include <vtkMatrix4x4.h>
+#include <vtkMatrix4x4.h>
 #include <vtkObjectFactory.h>
 #include <vtkPickingManager.h>
 #include <vtkPlaneSource.h>
@@ -26,85 +26,90 @@
 #include <vtkRenderer.h>
 #include <vtkTextActor.h>
 #include <vtkTextProperty.h>
-#include <vtkTexture.h>
+//#include <vtkTexture.h>
 #include <vtkTransform.h>
 #include <vtkStreamingDemandDrivenPipeline.h>
 #include <vtkInformation.h>
 
-vtkStandardNewMacro(pxikVolumeSliceWidget);
-
-vtkCxxSetObjectMacro(pxikVolumeSliceWidget, PlaneProperty, vtkProperty);
-vtkCxxSetObjectMacro(pxikVolumeSliceWidget, SelectedPlaneProperty, vtkProperty);
-vtkCxxSetObjectMacro(pxikVolumeSliceWidget, CursorProperty, vtkProperty);
-vtkCxxSetObjectMacro(pxikVolumeSliceWidget, MarginProperty, vtkProperty);
-vtkCxxSetObjectMacro(pxikVolumeSliceWidget, TexturePlaneProperty, vtkProperty);
-vtkCxxSetObjectMacro(pxikVolumeSliceWidget, ColorMap, vtkImageMapToColors);
+vtkStandardNewMacro(VTKCustomResliceWidget);
 
 //----------------------------------------------------------------------------
-pxikVolumeSliceWidget::pxikVolumeSliceWidget() : vtkPolyDataSourceWidget()
+VTKCustomResliceWidget::VTKCustomResliceWidget()
 {
-	this->State = pxikVolumeSliceWidget::Start;
-	this->EventCallbackCommand->SetCallback(pxikVolumeSliceWidget::ProcessEvents);
+	//상태 초기화 및 이벤트 등록
+	this->State = VTKCustomResliceWidget::Start;
+	this->EventCallbackCommand->SetCallback(VTKCustomResliceWidget::ProcessEvents);
 
-	this->Interaction = 1;
+	// 초기화, enum으로 표기할 것을 추천합
+	this->Interaction = 1;  
 	this->PlaneOrientation = 0;
-	this->PlaceFactor = 1.0;
-	this->RestrictPlaneToVolume = 1;
-	this->OriginalWindow = 1.0;
-	this->OriginalLevel = 0.5;
+	//this->PlaceFactor = 1.0;
+
+	this->RestrictPlaneToVolumeOn();
+	//=> this->RestrictPlaneToVolume = 1;
+	
+	this->OriginalWindow = 1.0; //이미지 밝기용 nn
+	this->OriginalLevel = 0.5;	
 	this->CurrentWindow = 1.0;
-	this->CurrentLevel = 0.5;
-	this->TextureInterpolate = 1;
+	this->TextureInterpolate = 1; // nn
 	this->ResliceInterpolate = VTK_LINEAR_RESLICE;
-	this->UserControlledLookupTable = 0;
-	this->DisplayText = 0;
+	
+	this->UserControlledLookupTableOff();
+	//=> this->UserControlledLookupTable = 0;
+
+	this->DisplayText = false; // 0;
 	this->CurrentCursorPosition[0] = 0;
 	this->CurrentCursorPosition[1] = 0;
 	this->CurrentCursorPosition[2] = 0;
-	this->CurrentImageValue = VTK_DOUBLE_MAX;
-	this->MarginSelectMode = 8;
+	
+	this->CurrentImageValue = VTK_UNSIGNED_SHORT_MAX;
+	//this->CurrentImageValue = VTK_DOUBLE_MAX;
+
+	this->MarginSelectMode = 8; //뭔데 8임?
+	this->UseContinuousCursorOff();
 	this->UseContinuousCursor = 0;
-	this->MarginSizeX = 0.05;
-	this->MarginSizeY = 0.05;
 
+	this->MarginSizeX = 0.05;	//nn
+	this->MarginSizeY = 0.05;	//nn
 
-	// Represent the plane's outline
-	//
+	//Outline 설정
 	this->PlaneSource = vtkPlaneSource::New();
 	this->PlaneSource->SetXResolution(1);
 	this->PlaneSource->SetYResolution(1);
+
 	this->PlaneOutlinePolyData = vtkPolyData::New();
 	this->PlaneOutlineActor = vtkActor::New();
 
-	// Represent the resliced image plane
-	//
+	//Image Reslice Part
 	this->ColorMap = vtkImageMapToColors::New();
 	this->Reslice = vtkImageReslice::New();
 	this->Reslice->TransformInputSamplingOff();
+	//this->Reslice->TransformInputSampling = 0;
 	this->ResliceAxes = vtkMatrix4x4::New();
+
+
 	this->Texture = vtkTexture::New();
 	this->TexturePlaneActor = vtkActor::New();
 	this->Transform = vtkTransform::New();
+
+
 	this->ImageData = nullptr;
 	this->LookupTable = nullptr;
 
-	// Represent the cross hair cursor
-	//
+
+	//크로스헤어 커서
 	this->CursorPolyData = vtkPolyData::New();
 	this->CursorActor = vtkActor::New();
 
-	// Represent the oblique positioning margins
-	//
+	//기울기 이벤트 영역 표시
 	this->MarginPolyData = vtkPolyData::New();
 	this->MarginActor = vtkActor::New();
 
-	// Represent the text: annotation for cursor position and W/L
-	//
+	//텍스트 엑터
 	this->TextActor = vtkTextActor::New();
 
-	this->GeneratePlaneOutline();
 
-	// Define some default point coordinates
+	// 디폴트 포인트 옵션
 	//
 	double bounds[6];
 	bounds[0] = -0.5;
@@ -114,61 +119,67 @@ pxikVolumeSliceWidget::pxikVolumeSliceWidget() : vtkPolyDataSourceWidget()
 	bounds[4] = -0.5;
 	bounds[5] = 0.5;
 
-	// Initial creation of the widget, serves to initialize it
-	//
+	// 위젯 생성 및 초기화
+//
 	this->PlaceWidget(bounds);
 
-	this->GenerateTexturePlane();
+	//this->GenerateTexturePlane();
 	this->GenerateCursor();
 	this->GenerateMargins();
 	this->GenerateText();
 
-	// Manage the picking stuff
+	// 피커 설정
 	//
 	this->PlanePicker = nullptr;
 	vtkCellPicker* picker = vtkCellPicker::New();
 	picker->SetTolerance(0.005); //need soem fluff 값을 조금만 줄것
-								//오차율 설정
+								 //오차율 설정
 	this->SetPicker(picker);
 	picker->Delete();
 
-	// Set up the initial properties
+	//초기 Property 설정
 	//
 	this->PlaneProperty = nullptr;
 	this->SelectedPlaneProperty = nullptr;
-	this->TexturePlaneProperty = nullptr;
+	//this->TexturePlaneProperty = nullptr;
 	this->CursorProperty = nullptr;
 	this->MarginProperty = nullptr;
 	this->CreateDefaultProperties();
 
-	// Set up actions
 
-	//this->LeftButtonAction = pxikVolumeSliceWidget::VTK_CURSOR_ACTION;
-	//this->MiddleButtonAction = pxikVolumeSliceWidget::VTK_SLICE_MOTION_ACTION;
-	//this->RightButtonAction = pxikVolumeSliceWidget::VTK_WINDOW_LEVEL_ACTION;
+	// 초기 액션 설정
 
-	this->LeftButtonAction = pxikVolumeSliceWidget::VTK_SLICE_MOTION_ACTION;
+//this->LeftButtonAction = pxikVolumeSliceWidget::VTK_CURSOR_ACTION;
+//this->MiddleButtonAction = pxikVolumeSliceWidget::VTK_SLICE_MOTION_ACTION;
+//this->RightButtonAction = pxikVolumeSliceWidget::VTK_WINDOW_LEVEL_ACTION;
+
+	this->LeftButtonAction = VTKCustomResliceWidget::VTK_SLICE_MOTION_ACTION;
 	this->MiddleButtonAction = -1;
 	this->RightButtonAction = -1;
 
-	// Set up modifiers
+	// Set up modifier
+	// 모디파이어 설정
 
-	this->LeftButtonAutoModifier = pxikVolumeSliceWidget::VTK_NO_MODIFIER;
-	this->MiddleButtonAutoModifier = pxikVolumeSliceWidget::VTK_NO_MODIFIER;
-	this->RightButtonAutoModifier = pxikVolumeSliceWidget::VTK_NO_MODIFIER;
+	this->LeftButtonAutoModifier = VTKCustomResliceWidget::VTK_NO_MODIFIER;
+	this->MiddleButtonAutoModifier = VTKCustomResliceWidget::VTK_NO_MODIFIER;
+	this->RightButtonAutoModifier = VTKCustomResliceWidget::VTK_NO_MODIFIER;
 
-	this->LastButtonPressed = pxikVolumeSliceWidget::VTK_NO_BUTTON;
+	this->LastButtonPressed = VTKCustomResliceWidget::VTK_NO_BUTTON;
 
-	this->TextureVisibility = 1;
+	//this->TextureVisibility = 1;
 }
 
 //----------------------------------------------------------------------------
-pxikVolumeSliceWidget::~pxikVolumeSliceWidget()
+VTKCustomResliceWidget::~VTKCustomResliceWidget()
 {
+	//삭제는 연결의 반대순으로 진행하는듯 
+	//Delete Outline Data, Actor 
 	this->PlaneOutlineActor->Delete();
 	this->PlaneOutlinePolyData->Delete();
 	this->PlaneSource->Delete();
 
+	//Delete와 비슷하다는데 음.... 정확히는 모르겠음
+	//연결되어있는 경우 (ref count > 1) 일 때 쓰는 것 같음 햇갈리지 말라고
 	if (this->PlanePicker)
 	{
 		this->PlanePicker->UnRegister(this);
@@ -227,7 +238,7 @@ pxikVolumeSliceWidget::~pxikVolumeSliceWidget()
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::SetTextureVisibility(int vis)
+void VTKCustomResliceWidget::SetTextureVisibility(int vis)
 {
 	if (this->TextureVisibility == vis)
 	{
@@ -253,7 +264,7 @@ void pxikVolumeSliceWidget::SetTextureVisibility(int vis)
 
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::SetEnabled(int enabling)
+void VTKCustomResliceWidget::SetEnabled(int enabling)
 {
 
 	if (!this->Interactor)
@@ -357,59 +368,52 @@ void pxikVolumeSliceWidget::SetEnabled(int enabling)
 	this->Interactor->Render();
 }
 
+
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::ProcessEvents(vtkObject* vtkNotUsed(object),
+void VTKCustomResliceWidget::ProcessEvents(vtkObject* vtkNotUsed(object),
 	unsigned long event,
 	void* clientdata,
 	void* vtkNotUsed(calldata))
 {
-	pxikVolumeSliceWidget* self =
-		reinterpret_cast<pxikVolumeSliceWidget *>(clientdata);
+	VTKCustomResliceWidget* self =
+		reinterpret_cast<VTKCustomResliceWidget *>(clientdata);
 
-	self->LastButtonPressed = pxikVolumeSliceWidget::VTK_NO_BUTTON;
+	self->LastButtonPressed = VTKCustomResliceWidget::VTK_NO_BUTTON;
 
 	//okay, let's do the right thing
+	//TODO: We need to add Mouse Wheel Event
+	//		change Event Role and sequence
 	switch (event)
 	{
 	case vtkCommand::LeftButtonPressEvent:
-		self->LastButtonPressed = pxikVolumeSliceWidget::VTK_LEFT_BUTTON;
+		self->LastButtonPressed = VTKCustomResliceWidget::VTK_LEFT_BUTTON;
 		self->OnLeftButtonDown();
 		break;
 	case vtkCommand::LeftButtonReleaseEvent:
-		self->LastButtonPressed = pxikVolumeSliceWidget::VTK_LEFT_BUTTON;
+		self->LastButtonPressed = VTKCustomResliceWidget::VTK_LEFT_BUTTON;
 		self->OnLeftButtonUp();
 		break;
-	case vtkCommand::MiddleButtonPressEvent:
-		self->LastButtonPressed = pxikVolumeSliceWidget::VTK_MIDDLE_BUTTON;
-		self->OnMiddleButtonDown();
+
+
+	case vtkCommand::MouseWheelForwardEvent:
 		break;
-	case vtkCommand::MiddleButtonReleaseEvent:
-		self->LastButtonPressed = pxikVolumeSliceWidget::VTK_MIDDLE_BUTTON;
-		self->OnMiddleButtonUp();
+	case vtkCommand::MouseWheelBackwardEvent:
 		break;
-	case vtkCommand::RightButtonPressEvent:
-		self->LastButtonPressed = pxikVolumeSliceWidget::VTK_RIGHT_BUTTON;
-		self->OnRightButtonDown();
-		break;
-	case vtkCommand::RightButtonReleaseEvent:
-		self->LastButtonPressed = pxikVolumeSliceWidget::VTK_RIGHT_BUTTON;
-		self->OnRightButtonUp();
-		break;
+
+
+
 	case vtkCommand::MouseMoveEvent:
 		self->OnMouseMove();
 		break;
 	case vtkCommand::CharEvent:
 		self->OnChar();
 		break;
-
-	case vtkCommand::KeyPressEvent:
-		self->OnChar();
-		break;
 	}
+
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::OnChar()
+void VTKCustomResliceWidget::OnChar()
 {
 	vtkRenderWindowInteractor *i = this->Interactor;
 
@@ -428,30 +432,6 @@ void pxikVolumeSliceWidget::OnChar()
 			this->Interactor->GetInteractorStyle()->OnChar();
 		}
 	}
-
-	if (i->GetKeyCode() == 'p' || i->GetKeyCode() == 'P')
-	{
-		if (i->GetShiftKey() || i->GetControlKey())
-		{
-			if (!CursorTest)
-			{
-				CursorTest = true;
-				this->StartCursor();
-			}
-			else
-			{
-				CursorTest = false;
-				this->StopCursor();
-			}
-
-		}
-		else
-		{
-			this->Interactor->GetInteractorStyle()->OnChar();
-		}
-	}
-
-
 	else
 	{
 		this->Interactor->GetInteractorStyle()->OnChar();
@@ -459,7 +439,7 @@ void pxikVolumeSliceWidget::OnChar()
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::AddObservers(void)
+void VTKCustomResliceWidget::AddObservers(void)
 {
 	// listen for the following events
 	vtkRenderWindowInteractor *i = this->Interactor;
@@ -471,23 +451,17 @@ void pxikVolumeSliceWidget::AddObservers(void)
 			this->EventCallbackCommand, this->Priority);
 		i->AddObserver(vtkCommand::LeftButtonReleaseEvent,
 			this->EventCallbackCommand, this->Priority);
-		i->AddObserver(vtkCommand::MiddleButtonPressEvent,
+		i->AddObserver(vtkCommand::MouseWheelForwardEvent,
 			this->EventCallbackCommand, this->Priority);
-		i->AddObserver(vtkCommand::MiddleButtonReleaseEvent,
-			this->EventCallbackCommand, this->Priority);
-		i->AddObserver(vtkCommand::RightButtonPressEvent,
-			this->EventCallbackCommand, this->Priority);
-		i->AddObserver(vtkCommand::RightButtonReleaseEvent,
+		i->AddObserver(vtkCommand::MouseWheelBackwardEvent,
 			this->EventCallbackCommand, this->Priority);
 		i->AddObserver(vtkCommand::CharEvent,
-			this->EventCallbackCommand, this->Priority);
-		i->AddObserver(vtkCommand::KeyPressEvent,
 			this->EventCallbackCommand, this->Priority);
 	}
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::SetInteraction(int interact)
+void VTKCustomResliceWidget::SetInteraction(int interact)
 {
 	if (this->Interactor && this->Enabled)
 	{
@@ -512,7 +486,7 @@ void pxikVolumeSliceWidget::SetInteraction(int interact)
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::PrintSelf(ostream& os, vtkIndent indent)
+void VTKCustomResliceWidget::PrintSelf(ostream& os, vtkIndent indent)
 {
 	this->Superclass::PrintSelf(os, indent);
 
@@ -661,10 +635,13 @@ void pxikVolumeSliceWidget::PrintSelf(ostream& os, vtkIndent indent)
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::BuildRepresentation()
+void VTKCustomResliceWidget::BuildRepresentation()
 {
+	//TODO : SLCIE Plane
+	//크기 조절시 여기를 참조할것
 	this->PlaneSource->Update();
-	double *o = this->PlaneSource->GetOrigin();
+
+	double *o	= this->PlaneSource->GetOrigin();
 	double *pt1 = this->PlaneSource->GetPoint1();
 	double *pt2 = this->PlaneSource->GetPoint2();
 
@@ -684,8 +661,9 @@ void pxikVolumeSliceWidget::BuildRepresentation()
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::HighlightPlane(int highlight)
+void VTKCustomResliceWidget::HighlightPlane(int highlight)
 {
+	//TODO : 선택받을때 사용하는 함수인듯
 	if (highlight)
 	{
 		this->PlaneOutlineActor->SetProperty(this->SelectedPlaneProperty);
@@ -698,117 +676,53 @@ void pxikVolumeSliceWidget::HighlightPlane(int highlight)
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::OnLeftButtonDown()
+void VTKCustomResliceWidget::OnLeftButtonDown()
 {
 	switch (this->LeftButtonAction)
 	{
-	case pxikVolumeSliceWidget::VTK_CURSOR_ACTION:
+	case VTKCustomResliceWidget::VTK_CURSOR_ACTION:
 		this->StartCursor();
 		break;
-	case pxikVolumeSliceWidget::VTK_SLICE_MOTION_ACTION:
+	case VTKCustomResliceWidget::VTK_SLICE_MOTION_ACTION:
 		this->StartSliceMotion();
 		break;
-	case pxikVolumeSliceWidget::VTK_WINDOW_LEVEL_ACTION:
+	case VTKCustomResliceWidget::VTK_WINDOW_LEVEL_ACTION:
 		this->StartWindowLevel();
 		break;
 	}
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::OnLeftButtonUp()
+void VTKCustomResliceWidget::OnLeftButtonUp()
 {
 	switch (this->LeftButtonAction)
 	{
-	case pxikVolumeSliceWidget::VTK_CURSOR_ACTION:
+	case VTKCustomResliceWidget::VTK_CURSOR_ACTION:
 		this->StopCursor();
 		break;
-	case pxikVolumeSliceWidget::VTK_SLICE_MOTION_ACTION:
+	case VTKCustomResliceWidget::VTK_SLICE_MOTION_ACTION:
 		this->StopSliceMotion();
 		break;
-	case pxikVolumeSliceWidget::VTK_WINDOW_LEVEL_ACTION:
+	case VTKCustomResliceWidget::VTK_WINDOW_LEVEL_ACTION:
 		this->StopWindowLevel();
 		break;
 	}
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::OnMiddleButtonDown()
+void VTKCustomResliceWidget::StartCursor()
 {
-	switch (this->MiddleButtonAction)
-	{
-	case pxikVolumeSliceWidget::VTK_CURSOR_ACTION:
-		this->StartCursor();
-		break;
-	case pxikVolumeSliceWidget::VTK_SLICE_MOTION_ACTION:
-		this->StartSliceMotion();
-		break;
-	case pxikVolumeSliceWidget::VTK_WINDOW_LEVEL_ACTION:
-		this->StartWindowLevel();
-		break;
-	}
-}
+	//TODO : 수정할 것!
+	//		 해당 이미지를 선택하고 옵션을 선택할 시에 작동하도록 설정할것
+	//		 하이라이트 이벤트 삭제할 것 => 해당 이벤트는 해당 슬라이스를 선택했을때 사용할 것
 
-//----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::OnMiddleButtonUp()
-{
-	switch (this->MiddleButtonAction)
-	{
-	case pxikVolumeSliceWidget::VTK_CURSOR_ACTION:
-		this->StopCursor();
-		break;
-	case pxikVolumeSliceWidget::VTK_SLICE_MOTION_ACTION:
-		this->StopSliceMotion();
-		break;
-	case pxikVolumeSliceWidget::VTK_WINDOW_LEVEL_ACTION:
-		this->StopWindowLevel();
-		break;
-	}
-}
-
-//----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::OnRightButtonDown()
-{
-	switch (this->RightButtonAction)
-	{
-	case pxikVolumeSliceWidget::VTK_CURSOR_ACTION:
-		this->StartCursor();
-		break;
-	case pxikVolumeSliceWidget::VTK_SLICE_MOTION_ACTION:
-		this->StartSliceMotion();
-		break;
-	case pxikVolumeSliceWidget::VTK_WINDOW_LEVEL_ACTION:
-		this->StartWindowLevel();
-		break;
-	}
-}
-
-//----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::OnRightButtonUp()
-{
-	switch (this->RightButtonAction)
-	{
-	case pxikVolumeSliceWidget::VTK_CURSOR_ACTION:
-		this->StopCursor();
-		break;
-	case pxikVolumeSliceWidget::VTK_SLICE_MOTION_ACTION:
-		this->StopSliceMotion();
-		break;
-	case pxikVolumeSliceWidget::VTK_WINDOW_LEVEL_ACTION:
-		this->StopWindowLevel();
-		break;
-	}
-}
-
-//----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::StartCursor()
-{
 	int X = this->Interactor->GetEventPosition()[0];
 	int Y = this->Interactor->GetEventPosition()[1];
 
 	// Okay, make sure that the pick is in the current renderer
 	if (!this->CurrentRenderer || !this->CurrentRenderer->IsInViewport(X, Y))
 	{
-		this->State = pxikVolumeSliceWidget::Outside;
+		this->State = VTKCustomResliceWidget::Outside;
 		return;
 	}
 
@@ -836,7 +750,7 @@ void pxikVolumeSliceWidget::StartCursor()
 
 	if (!found || path == nullptr)
 	{
-		this->State = pxikVolumeSliceWidget::Outside;
+		this->State = VTKCustomResliceWidget::Outside;
 		this->HighlightPlane(0);
 		this->ActivateCursor(0);
 		this->ActivateText(0);
@@ -844,7 +758,7 @@ void pxikVolumeSliceWidget::StartCursor()
 	}
 	else
 	{
-		this->State = pxikVolumeSliceWidget::Cursoring;
+		this->State = VTKCustomResliceWidget::Cursoring;
 		this->HighlightPlane(1);
 		this->ActivateCursor(1);
 		this->ActivateText(1);
@@ -859,15 +773,16 @@ void pxikVolumeSliceWidget::StartCursor()
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::StopCursor()
+void VTKCustomResliceWidget::StopCursor()
 {
-	if (this->State == pxikVolumeSliceWidget::Outside ||
-		this->State == pxikVolumeSliceWidget::Start)
+	//TDOO : 하이라이트 이벤트 제거할것 
+	if (this->State == VTKCustomResliceWidget::Outside ||
+		this->State == VTKCustomResliceWidget::Start)
 	{
 		return;
 	}
 
-	this->State = pxikVolumeSliceWidget::Start;
+	this->State = VTKCustomResliceWidget::Start;
 	this->HighlightPlane(0);
 	this->ActivateCursor(0);
 	this->ActivateText(0);
@@ -878,16 +793,19 @@ void pxikVolumeSliceWidget::StopCursor()
 	this->Interactor->Render();
 }
 
+
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::StartSliceMotion()
+void VTKCustomResliceWidget::StartSliceMotion()
 {
+	//TODO : 하이라이트 이벤트 재설정
+
 	int X = this->Interactor->GetEventPosition()[0];
 	int Y = this->Interactor->GetEventPosition()[1];
 
 	// Okay, make sure that the pick is in the current renderer
 	if (!this->CurrentRenderer || !this->CurrentRenderer->IsInViewport(X, Y))
 	{
-		this->State = pxikVolumeSliceWidget::Outside;
+		this->State = VTKCustomResliceWidget::Outside;
 		return;
 	}
 
@@ -915,14 +833,14 @@ void pxikVolumeSliceWidget::StartSliceMotion()
 
 	if (!found || path == nullptr)
 	{
-		this->State = pxikVolumeSliceWidget::Outside;
+		this->State = VTKCustomResliceWidget::Outside;
 		this->HighlightPlane(0);
 		this->ActivateMargins(0);
 		return;
 	}
 	else
 	{
-		this->State = pxikVolumeSliceWidget::Pushing;
+		this->State = VTKCustomResliceWidget::Pushing;
 		this->HighlightPlane(1);
 		this->ActivateMargins(1);
 		this->AdjustState();
@@ -936,15 +854,16 @@ void pxikVolumeSliceWidget::StartSliceMotion()
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::StopSliceMotion()
+void VTKCustomResliceWidget::StopSliceMotion()
 {
-	if (this->State == pxikVolumeSliceWidget::Outside ||
-		this->State == pxikVolumeSliceWidget::Start)
+	//TODO : 작동원리 수정할것
+	if (this->State == VTKCustomResliceWidget::Outside ||
+		this->State == VTKCustomResliceWidget::Start)
 	{
 		return;
 	}
 
-	this->State = pxikVolumeSliceWidget::Start;
+	this->State = VTKCustomResliceWidget::Start;
 	this->HighlightPlane(0);
 	this->ActivateMargins(0);
 
@@ -954,8 +873,12 @@ void pxikVolumeSliceWidget::StopSliceMotion()
 	this->Interactor->Render();
 }
 
+
+#pragma region WINDOW LEVEL ACTION - 슬라이스 이미지 소명설정 (Not USE)
+
+
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::StartWindowLevel()
+void VTKCustomResliceWidget::StartWindowLevel()
 {
 	int X = this->Interactor->GetEventPosition()[0];
 	int Y = this->Interactor->GetEventPosition()[1];
@@ -963,7 +886,7 @@ void pxikVolumeSliceWidget::StartWindowLevel()
 	// Okay, make sure that the pick is in the current renderer
 	if (!this->CurrentRenderer || !this->CurrentRenderer->IsInViewport(X, Y))
 	{
-		this->State = pxikVolumeSliceWidget::Outside;
+		this->State = VTKCustomResliceWidget::Outside;
 		return;
 	}
 
@@ -994,14 +917,14 @@ void pxikVolumeSliceWidget::StartWindowLevel()
 
 	if (!found || path == nullptr)
 	{
-		this->State = pxikVolumeSliceWidget::Outside;
+		this->State = VTKCustomResliceWidget::Outside;
 		this->HighlightPlane(0);
 		this->ActivateText(0);
 		return;
 	}
 	else
 	{
-		this->State = pxikVolumeSliceWidget::WindowLevelling;
+		this->State = VTKCustomResliceWidget::WindowLevelling;
 		this->HighlightPlane(1);
 		this->ActivateText(1);
 		this->StartWindowLevelPositionX = X;
@@ -1018,16 +941,18 @@ void pxikVolumeSliceWidget::StartWindowLevel()
 	this->Interactor->Render();
 }
 
+
+
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::StopWindowLevel()
+void VTKCustomResliceWidget::StopWindowLevel()
 {
-	if (this->State == pxikVolumeSliceWidget::Outside ||
-		this->State == pxikVolumeSliceWidget::Start)
+	if (this->State == VTKCustomResliceWidget::Outside ||
+		this->State == VTKCustomResliceWidget::Start)
 	{
 		return;
 	}
 
-	this->State = pxikVolumeSliceWidget::Start;
+	this->State = VTKCustomResliceWidget::Start;
 	this->HighlightPlane(0);
 	this->ActivateText(0);
 
@@ -1040,13 +965,15 @@ void pxikVolumeSliceWidget::StopWindowLevel()
 	this->Interactor->Render();
 }
 
+#pragma endregion
+
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::OnMouseMove()
+void VTKCustomResliceWidget::OnMouseMove()
 {
 	// See whether we're active
 	//
-	if (this->State == pxikVolumeSliceWidget::Outside ||
-		this->State == pxikVolumeSliceWidget::Start)
+	if (this->State == VTKCustomResliceWidget::Outside ||
+		this->State == VTKCustomResliceWidget::Start)
 	{
 		return;
 	}
@@ -1080,58 +1007,63 @@ void pxikVolumeSliceWidget::OnMouseMove()
 
 	this->ComputeDisplayToWorld(double(X), double(Y), z, pickPoint);
 
-	if (this->State == pxikVolumeSliceWidget::WindowLevelling)
+
+	switch (this->State)
 	{
+	case VTKCustomResliceWidget::WindowLevelling : 
 		this->WindowLevel(X, Y);
 		this->ManageTextDisplay();
-	}
-	else if (this->State == pxikVolumeSliceWidget::Pushing)
-	{
+		break;
+	
+	case VTKCustomResliceWidget::Pushing :
 		this->Push(prevPickPoint, pickPoint);
 		this->UpdatePlane();
 		this->UpdateMargins();
 		this->BuildRepresentation();
-	}
-	else if (this->State == pxikVolumeSliceWidget::Spinning)
-	{
+		break;
+
+	case VTKCustomResliceWidget::Spinning :
 		this->Spin(prevPickPoint, pickPoint);
 		this->UpdatePlane();
 		this->UpdateMargins();
 		this->BuildRepresentation();
-	}
-	else if (this->State == pxikVolumeSliceWidget::Rotating)
-	{
+		break;
+
+	case VTKCustomResliceWidget::Rotating:
 		camera->GetViewPlaneNormal(vpn);
 		this->Rotate(prevPickPoint, pickPoint, vpn);
 		this->UpdatePlane();
 		this->UpdateMargins();
 		this->BuildRepresentation();
-	}
-	else if (this->State == pxikVolumeSliceWidget::Scaling)
-	{
+
+	case  VTKCustomResliceWidget::Scaling:
 		this->Scale(prevPickPoint, pickPoint, X, Y);
 		this->UpdatePlane();
 		this->UpdateMargins();
 		this->BuildRepresentation();
-	}
-	else if (this->State == pxikVolumeSliceWidget::Moving)
-	{
+		break;
+	
+	case VTKCustomResliceWidget::Moving:
 		this->Translate(prevPickPoint, pickPoint);
 		this->UpdatePlane();
 		this->UpdateMargins();
 		this->BuildRepresentation();
-	}
-	else if (this->State == pxikVolumeSliceWidget::Cursoring)
-	{
+		break;
+	
+	case VTKCustomResliceWidget::Cursoring:
 		this->UpdateCursor(X, Y);
 		this->ManageTextDisplay();
-	}
+		break;
 
+	default:
+		break;
+	}
+	
 	// Interact, if desired
 	//
 	this->EventCallbackCommand->SetAbortFlag(1);
 
-	if (this->State == pxikVolumeSliceWidget::WindowLevelling)
+	if (this->State == VTKCustomResliceWidget::WindowLevelling)
 	{
 		double wl[2] = { this->CurrentWindow, this->CurrentLevel };
 		this->InvokeEvent(vtkCommand::WindowLevelEvent, wl);
@@ -1145,81 +1077,10 @@ void pxikVolumeSliceWidget::OnMouseMove()
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::WindowLevel(int X, int Y)
+void VTKCustomResliceWidget::InvertTable()
 {
-	int *size = this->CurrentRenderer->GetSize();
-	double window = this->InitialWindow;
-	double level = this->InitialLevel;
-
-	// Compute normalized delta
-
-	double dx = 4.0 * (X - this->StartWindowLevelPositionX) / size[0];
-	double dy = 4.0 *(this->StartWindowLevelPositionY - Y) / size[1];
-
-	// Scale by current values
-
-	if (fabs(window) > 0.01)
-	{
-		dx = dx * window;
-	}
-	else
-	{
-		dx = dx * (window < 0 ? -0.01 : 0.01);
-	}
-	if (fabs(level) > 0.01)
-	{
-		dy = dy * level;
-	}
-	else
-	{
-		dy = dy * (level < 0 ? -0.01 : 0.01);
-	}
-
-	// Abs so that direction does not flip
-
-	if (window < 0.0)
-	{
-		dx = -1 * dx;
-	}
-	if (level < 0.0)
-	{
-		dy = -1 * dy;
-	}
-
-	// Compute new window level
-
-	double newWindow = dx + window;
-	double newLevel = level - dy;
-
-	if (fabs(newWindow) < 0.01)
-	{
-		newWindow = 0.01 * (newWindow < 0 ? -1 : 1);
-	}
-	if (fabs(newLevel) < 0.01)
-	{
-		newLevel = 0.01 * (newLevel < 0 ? -1 : 1);
-	}
-
-	if (!this->UserControlledLookupTable)
-	{
-		if ((newWindow < 0 && this->CurrentWindow > 0) || \
-			(newWindow > 0 && this->CurrentWindow < 0))
-		{
-			this->InvertTable();
-		}
-
-		double rmin = newLevel - 0.5*fabs(newWindow);
-		double rmax = rmin + fabs(newWindow);
-		this->LookupTable->SetTableRange(rmin, rmax);
-	}
-
-	this->CurrentWindow = newWindow;
-	this->CurrentLevel = newLevel;
-}
-
-//----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::InvertTable()
-{
+	//TODO : for WINDOW LEVEL
+	//		 사용 안할듯
 	int index = this->LookupTable->GetNumberOfTableValues();
 	unsigned char swap[4];
 	size_t num = 4 * sizeof(unsigned char);
@@ -1241,8 +1102,10 @@ void pxikVolumeSliceWidget::InvertTable()
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::SetWindowLevel(double window, double level, int copy)
+void VTKCustomResliceWidget::SetWindowLevel(double window, double level, int copy)
 {
+	//TODO : for WINDOW LEVEL
+	//		 사용 안할듯
 	if (copy)
 	{
 		this->CurrentWindow = window;
@@ -1280,17 +1143,17 @@ void pxikVolumeSliceWidget::SetWindowLevel(double window, double level, int copy
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::GetWindowLevel(double wl[2])
+void VTKCustomResliceWidget::GetWindowLevel(double wl[2])
 {
 	wl[0] = this->CurrentWindow;
 	wl[1] = this->CurrentLevel;
 }
 
 //----------------------------------------------------------------------------
-int pxikVolumeSliceWidget::GetCursorData(double xyzv[4])
+int VTKCustomResliceWidget::GetCursorData(double xyzv[4])
 {
-	if (this->State != pxikVolumeSliceWidget::Cursoring || \
-		this->CurrentImageValue == VTK_DOUBLE_MAX)
+	if (this->State != VTKCustomResliceWidget::Cursoring || \
+		this->CurrentImageValue == VTK_UNSIGNED_SHORT_MAX)
 	{
 		return 0;
 	}
@@ -1304,26 +1167,14 @@ int pxikVolumeSliceWidget::GetCursorData(double xyzv[4])
 }
 
 //----------------------------------------------------------------------------
-int pxikVolumeSliceWidget::GetCursorDataStatus()
-{
-	if (this->State != pxikVolumeSliceWidget::Cursoring || \
-		this->CurrentImageValue == VTK_DOUBLE_MAX)
-	{
-		return 0;
-	}
-
-	return 1;
-}
-
-//----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::ManageTextDisplay()
+void VTKCustomResliceWidget::ManageTextDisplay()
 {
 	if (!this->DisplayText)
 	{
 		return;
 	}
 
-	if (this->State == pxikVolumeSliceWidget::WindowLevelling)
+	if (this->State == VTKCustomResliceWidget::WindowLevelling)
 	{
 		snprintf(this->TextBuff,
 			VTK_IMAGE_PLANE_WIDGET_MAX_TEXTBUFF,
@@ -1331,7 +1182,7 @@ void pxikVolumeSliceWidget::ManageTextDisplay()
 			this->CurrentWindow,
 			this->CurrentLevel);
 	}
-	else if (this->State == pxikVolumeSliceWidget::Cursoring)
+	else if (this->State == VTKCustomResliceWidget::Cursoring)
 	{
 		if (this->CurrentImageValue == VTK_DOUBLE_MAX)
 		{
@@ -1356,7 +1207,7 @@ void pxikVolumeSliceWidget::ManageTextDisplay()
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::Push(double *p1, double *p2)
+void VTKCustomResliceWidget::Push(double *p1, double *p2)
 {
 	// Get the motion vector
 	//
@@ -1365,11 +1216,14 @@ void pxikVolumeSliceWidget::Push(double *p1, double *p2)
 	v[1] = p2[1] - p1[1];
 	v[2] = p2[2] - p1[2];
 
+	//Scala 곱으로 이동시키는 작업
+	//A·B = C   => C = |A|cosΘ
+	//방향은 B과 평행하게 가짐
 	this->PlaneSource->Push(vtkMath::Dot(v, this->PlaneSource->GetNormal()));
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::CreateDefaultProperties()
+void VTKCustomResliceWidget::CreateDefaultProperties()
 {
 	if (!this->PlaneProperty)
 	{
@@ -1397,7 +1251,8 @@ void pxikVolumeSliceWidget::CreateDefaultProperties()
 		this->CursorProperty->SetRepresentationToWireframe();
 		this->CursorProperty->SetInterpolationToFlat();
 	}
-
+#pragma region  maybe Not USE
+	//TODO : 사용하지 않으므로 해당 연결 내용을 전부 제거해주세요
 	if (!this->MarginProperty)
 	{
 		this->MarginProperty = vtkProperty::New();
@@ -1414,10 +1269,11 @@ void pxikVolumeSliceWidget::CreateDefaultProperties()
 		this->TexturePlaneProperty->SetDiffuse(0);
 		this->TexturePlaneProperty->SetInterpolationToFlat();
 	}
+#pragma endregion
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::PlaceWidget(double bds[6])
+void VTKCustomResliceWidget::PlaceWidget(double bds[6])
 {
 	double bounds[6], center[3];
 
@@ -1447,7 +1303,7 @@ void pxikVolumeSliceWidget::PlaceWidget(double bds[6])
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::SetPlaneOrientation(int i)
+void VTKCustomResliceWidget::SetPlaneOrientation(int i)
 {
 	// Generate a XY plane if i = 2, z-normal
 	// or a YZ plane if i = 0, x-normal
@@ -1526,7 +1382,7 @@ void pxikVolumeSliceWidget::SetPlaneOrientation(int i)
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::SetInputConnection(vtkAlgorithmOutput* aout)
+void VTKCustomResliceWidget::SetInputConnection(vtkAlgorithmOutput* aout)
 {
 	this->Superclass::SetInputConnection(aout);
 
@@ -1543,8 +1399,8 @@ void pxikVolumeSliceWidget::SetInputConnection(vtkAlgorithmOutput* aout)
 		return;
 	}
 
-	double range[2] = {0, 65535};
-	
+	double range[2] = { 0, 65535 };
+
 	//TODO: 수정할것 여기 시간이 대부분임
 	//whj : 오래 걸리는 구간 히스토그램에서 넘겨준다고 가정하면 될듯하다
 	//this->ImageData->GetScalarRange(range);
@@ -1584,7 +1440,7 @@ void pxikVolumeSliceWidget::SetInputConnection(vtkAlgorithmOutput* aout)
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::UpdatePlane()
+void VTKCustomResliceWidget::UpdatePlane()
 {
 	if (!this->Reslice || !this->ImageData)
 	{
@@ -1617,6 +1473,7 @@ void pxikVolumeSliceWidget::UpdatePlane()
 			break;
 		}
 	}
+	//TODO: 이건 뭔 값이지?
 
 	if (this->RestrictPlaneToVolume)
 	{
@@ -1652,7 +1509,6 @@ void pxikVolumeSliceWidget::UpdatePlane()
 				k = i;
 			}
 		}
-		//whj : plane 외곽 방지
 		// Force the plane to lie within the true image bounds along its normal
 		//
 		if (planeCenter[k] > bounds[2 * k + 1])
@@ -1762,7 +1618,7 @@ void pxikVolumeSliceWidget::UpdatePlane()
 }
 
 //----------------------------------------------------------------------------
-vtkImageData* pxikVolumeSliceWidget::GetResliceOutput()
+vtkImageData* VTKCustomResliceWidget::GetResliceOutput()
 {
 	if (!this->Reslice)
 	{
@@ -1772,7 +1628,7 @@ vtkImageData* pxikVolumeSliceWidget::GetResliceOutput()
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::SetResliceInterpolate(int i)
+void VTKCustomResliceWidget::SetResliceInterpolate(int i)
 {
 	if (this->ResliceInterpolate == i)
 	{
@@ -1802,7 +1658,7 @@ void pxikVolumeSliceWidget::SetResliceInterpolate(int i)
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::SetPicker(vtkAbstractPropPicker* picker)
+void VTKCustomResliceWidget::SetPicker(vtkAbstractPropPicker* picker)
 {
 	// we have to have a picker for slice motion, window level and cursor to work
 	if (this->PlanePicker != picker)
@@ -1835,13 +1691,13 @@ void pxikVolumeSliceWidget::SetPicker(vtkAbstractPropPicker* picker)
 }
 
 //------------------------------------------------------------------------------
-void pxikVolumeSliceWidget::RegisterPickers()
+void VTKCustomResliceWidget::RegisterPickers()
 {
 	this->Interactor->GetPickingManager()->AddPicker(this->PlanePicker, this);
 }
 
 //----------------------------------------------------------------------------
-vtkLookupTable* pxikVolumeSliceWidget::CreateDefaultLookupTable()
+vtkLookupTable* VTKCustomResliceWidget::CreateDefaultLookupTable()
 {
 	vtkLookupTable* lut = vtkLookupTable::New();
 	lut->Register(this);
@@ -1856,7 +1712,7 @@ vtkLookupTable* pxikVolumeSliceWidget::CreateDefaultLookupTable()
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::SetLookupTable(vtkLookupTable* table)
+void VTKCustomResliceWidget::SetLookupTable(vtkLookupTable* table)
 {
 	if (this->LookupTable != table)
 	{
@@ -1882,8 +1738,8 @@ void pxikVolumeSliceWidget::SetLookupTable(vtkLookupTable* table)
 
 	if (this->ImageData && !this->UserControlledLookupTable)
 	{
-		double range[2] = {0, 65535};
-		//this->ImageData->GetScalarRange(range);
+		double range[2];
+		this->ImageData->GetScalarRange(range);
 
 		this->LookupTable->SetTableRange(range[0], range[1]);
 		this->LookupTable->Build();
@@ -1905,7 +1761,7 @@ void pxikVolumeSliceWidget::SetLookupTable(vtkLookupTable* table)
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::SetSlicePosition(double position)
+void VTKCustomResliceWidget::SetSlicePosition(double position)
 {
 	double amount = 0.0;
 	double planeOrigin[3];
@@ -1935,34 +1791,9 @@ void pxikVolumeSliceWidget::SetSlicePosition(double position)
 	this->Modified();
 }
 
-//----------------------------------------------------------------------------
-double pxikVolumeSliceWidget::GetSlicePosition()
-{
-	double planeOrigin[3];
-	this->PlaneSource->GetOrigin(planeOrigin);
-
-	if (this->PlaneOrientation == 2)
-	{
-		return planeOrigin[2];
-	}
-	else if (this->PlaneOrientation == 1)
-	{
-		return planeOrigin[1];
-	}
-	else if (this->PlaneOrientation == 0)
-	{
-		return planeOrigin[0];
-	}
-	else
-	{
-		vtkGenericWarningMacro("only works for ortho planes: set plane orientation first");
-	}
-
-	return 0.0;
-}
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::SetSliceIndex(int index)
+void VTKCustomResliceWidget::SetSliceIndex(int index)
 {
 	if (!this->Reslice)
 	{
@@ -2019,7 +1850,7 @@ void pxikVolumeSliceWidget::SetSliceIndex(int index)
 }
 
 //----------------------------------------------------------------------------
-int pxikVolumeSliceWidget::GetSliceIndex()
+int VTKCustomResliceWidget::GetSliceIndex()
 {
 	if (!this->Reslice)
 	{
@@ -2060,7 +1891,7 @@ int pxikVolumeSliceWidget::GetSliceIndex()
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::ActivateCursor(int i)
+void VTKCustomResliceWidget::ActivateCursor(int i)
 {
 
 	if (!this->CurrentRenderer)
@@ -2079,7 +1910,7 @@ void pxikVolumeSliceWidget::ActivateCursor(int i)
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::ActivateMargins(int i)
+void VTKCustomResliceWidget::ActivateMargins(int i)
 {
 
 	if (!this->CurrentRenderer)
@@ -2098,7 +1929,7 @@ void pxikVolumeSliceWidget::ActivateMargins(int i)
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::ActivateText(int i)
+void VTKCustomResliceWidget::ActivateText(int i)
 {
 	if (!this->CurrentRenderer || !this->DisplayText)
 	{
@@ -2115,8 +1946,9 @@ void pxikVolumeSliceWidget::ActivateText(int i)
 	}
 }
 
+
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::UpdateCursor(int X, int Y)
+void VTKCustomResliceWidget::UpdateCursor(int X, int Y)
 {
 	if (!this->ImageData)
 	{
@@ -2227,8 +2059,10 @@ void pxikVolumeSliceWidget::UpdateCursor(int X, int Y)
 	this->CursorPolyData->Modified();
 }
 
+
+
 //----------------------------------------------------------------------------
-int pxikVolumeSliceWidget::UpdateContinuousCursor(double *q)
+int VTKCustomResliceWidget::UpdateContinuousCursor(double *q)
 {
 	double tol2;
 	vtkCell *cell;
@@ -2268,7 +2102,7 @@ int pxikVolumeSliceWidget::UpdateContinuousCursor(double *q)
 }
 
 //----------------------------------------------------------------------------
-int pxikVolumeSliceWidget::UpdateDiscreteCursor(double *q)
+int VTKCustomResliceWidget::UpdateDiscreteCursor(double *q)
 {
 	// vtkImageData will find the nearest implicit point to q
 	//
@@ -2313,121 +2147,121 @@ int pxikVolumeSliceWidget::UpdateDiscreteCursor(double *q)
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::SetOrigin(double x, double y, double z)
+void VTKCustomResliceWidget::SetOrigin(double x, double y, double z)
 {
 	this->PlaneSource->SetOrigin(x, y, z);
 	this->Modified();
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::SetOrigin(double xyz[3])
+void VTKCustomResliceWidget::SetOrigin(double xyz[3])
 {
 	this->PlaneSource->SetOrigin(xyz);
 	this->Modified();
 }
 
 //----------------------------------------------------------------------------
-double* pxikVolumeSliceWidget::GetOrigin()
+double* VTKCustomResliceWidget::GetOrigin()
 {
 	return this->PlaneSource->GetOrigin();
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::GetOrigin(double xyz[3])
+void VTKCustomResliceWidget::GetOrigin(double xyz[3])
 {
 	this->PlaneSource->GetOrigin(xyz);
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::SetPoint1(double x, double y, double z)
+void VTKCustomResliceWidget::SetPoint1(double x, double y, double z)
 {
 	this->PlaneSource->SetPoint1(x, y, z);
 	this->Modified();
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::SetPoint1(double xyz[3])
+void VTKCustomResliceWidget::SetPoint1(double xyz[3])
 {
 	this->PlaneSource->SetPoint1(xyz);
 	this->Modified();
 }
 
 //----------------------------------------------------------------------------
-double* pxikVolumeSliceWidget::GetPoint1()
+double* VTKCustomResliceWidget::GetPoint1()
 {
 	return this->PlaneSource->GetPoint1();
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::GetPoint1(double xyz[3])
+void VTKCustomResliceWidget::GetPoint1(double xyz[3])
 {
 	this->PlaneSource->GetPoint1(xyz);
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::SetPoint2(double x, double y, double z)
+void VTKCustomResliceWidget::SetPoint2(double x, double y, double z)
 {
 	this->PlaneSource->SetPoint2(x, y, z);
 	this->Modified();
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::SetPoint2(double xyz[3])
+void VTKCustomResliceWidget::SetPoint2(double xyz[3])
 {
 	this->PlaneSource->SetPoint2(xyz);
 	this->Modified();
 }
 
 //----------------------------------------------------------------------------
-double* pxikVolumeSliceWidget::GetPoint2()
+double* VTKCustomResliceWidget::GetPoint2()
 {
 	return this->PlaneSource->GetPoint2();
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::GetPoint2(double xyz[3])
+void VTKCustomResliceWidget::GetPoint2(double xyz[3])
 {
 	this->PlaneSource->GetPoint2(xyz);
 }
 
 //----------------------------------------------------------------------------
-double* pxikVolumeSliceWidget::GetCenter()
+double* VTKCustomResliceWidget::GetCenter()
 {
 	return this->PlaneSource->GetCenter();
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::GetCenter(double xyz[3])
+void VTKCustomResliceWidget::GetCenter(double xyz[3])
 {
 	this->PlaneSource->GetCenter(xyz);
 }
 
 //----------------------------------------------------------------------------
-double* pxikVolumeSliceWidget::GetNormal()
+double* VTKCustomResliceWidget::GetNormal()
 {
 	return this->PlaneSource->GetNormal();
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::GetNormal(double xyz[3])
+void VTKCustomResliceWidget::GetNormal(double xyz[3])
 {
 	this->PlaneSource->GetNormal(xyz);
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::GetPolyData(vtkPolyData *pd)
+void VTKCustomResliceWidget::GetPolyData(vtkPolyData *pd)
 {
 	pd->ShallowCopy(this->PlaneSource->GetOutput());
 }
 
 //----------------------------------------------------------------------------
-vtkPolyDataAlgorithm *pxikVolumeSliceWidget::GetPolyDataAlgorithm()
+vtkPolyDataAlgorithm *VTKCustomResliceWidget::GetPolyDataAlgorithm()
 {
 	return this->PlaneSource;
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::UpdatePlacement(void)
+void VTKCustomResliceWidget::UpdatePlacement(void)
 {
 	this->UpdatePlane();
 	this->UpdateMargins();
@@ -2435,25 +2269,25 @@ void pxikVolumeSliceWidget::UpdatePlacement(void)
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::SetTextProperty(vtkTextProperty* tprop)
+void VTKCustomResliceWidget::SetTextProperty(vtkTextProperty* tprop)
 {
 	this->TextActor->SetTextProperty(tprop);
 }
 
 //----------------------------------------------------------------------------
-vtkTextProperty* pxikVolumeSliceWidget::GetTextProperty()
+vtkTextProperty* VTKCustomResliceWidget::GetTextProperty()
 {
 	return this->TextActor->GetTextProperty();
 }
 
 //----------------------------------------------------------------------------
-vtkTexture* pxikVolumeSliceWidget::GetTexture()
+vtkTexture* VTKCustomResliceWidget::GetTexture()
 {
 	return this->Texture;
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::GetVector1(double v1[3])
+void VTKCustomResliceWidget::GetVector1(double v1[3])
 {
 	double* p1 = this->PlaneSource->GetPoint1();
 	double* o = this->PlaneSource->GetOrigin();
@@ -2463,7 +2297,7 @@ void pxikVolumeSliceWidget::GetVector1(double v1[3])
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::GetVector2(double v2[3])
+void VTKCustomResliceWidget::GetVector2(double v2[3])
 {
 	double* p2 = this->PlaneSource->GetPoint2();
 	double* o = this->PlaneSource->GetOrigin();
@@ -2473,27 +2307,27 @@ void pxikVolumeSliceWidget::GetVector2(double v2[3])
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::AdjustState()
+void VTKCustomResliceWidget::AdjustState()
 {
 	int *auto_modifier = nullptr;
 	switch (this->LastButtonPressed)
 	{
-	case pxikVolumeSliceWidget::VTK_LEFT_BUTTON:
+	case VTKCustomResliceWidget::VTK_LEFT_BUTTON:
 		auto_modifier = &this->LeftButtonAutoModifier;
 		break;
-	case pxikVolumeSliceWidget::VTK_MIDDLE_BUTTON:
+	case VTKCustomResliceWidget::VTK_MIDDLE_BUTTON:
 		auto_modifier = &this->MiddleButtonAutoModifier;
 		break;
-	case pxikVolumeSliceWidget::VTK_RIGHT_BUTTON:
+	case VTKCustomResliceWidget::VTK_RIGHT_BUTTON:
 		auto_modifier = &this->RightButtonAutoModifier;
 		break;
 	}
 
 	if (this->Interactor->GetShiftKey() ||
 		(auto_modifier &&
-		(*auto_modifier & pxikVolumeSliceWidget::VTK_SHIFT_MODIFIER)))
+		(*auto_modifier & VTKCustomResliceWidget::VTK_SHIFT_MODIFIER)))
 	{
-		this->State = pxikVolumeSliceWidget::Scaling;
+		this->State = VTKCustomResliceWidget::Scaling;
 		return;
 	}
 
@@ -2578,25 +2412,25 @@ void pxikVolumeSliceWidget::AdjustState()
 
 	if (this->Interactor->GetControlKey() ||
 		(auto_modifier &&
-		(*auto_modifier & pxikVolumeSliceWidget::VTK_CONTROL_MODIFIER)))
+		(*auto_modifier & VTKCustomResliceWidget::VTK_CONTROL_MODIFIER)))
 	{
-		this->State = pxikVolumeSliceWidget::Moving;
+		this->State = VTKCustomResliceWidget::Moving;
 	}
 	else
 	{
 		if (this->MarginSelectMode >= 0 && this->MarginSelectMode < 4)
 		{
-			this->State = pxikVolumeSliceWidget::Spinning;
+			this->State = VTKCustomResliceWidget::Spinning;
 			return;
 		}
 		else if (this->MarginSelectMode == 8)
 		{
-			this->State = pxikVolumeSliceWidget::Pushing;
+			this->State = VTKCustomResliceWidget::Pushing;
 			return;
 		}
 		else
 		{
-			this->State = pxikVolumeSliceWidget::Rotating;
+			this->State = VTKCustomResliceWidget::Rotating;
 		}
 	}
 
@@ -2630,7 +2464,7 @@ void pxikVolumeSliceWidget::AdjustState()
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::Spin(double *p1, double *p2)
+void VTKCustomResliceWidget::Spin(double *p1, double *p2)
 {
 	// Disable cursor snap
 	//
@@ -2680,7 +2514,7 @@ void pxikVolumeSliceWidget::Spin(double *p1, double *p2)
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::Rotate(double *p1, double *p2, double *vpn)
+void VTKCustomResliceWidget::Rotate(double *p1, double *p2, double *vpn)
 {
 	// Disable cursor snap
 	//
@@ -2732,7 +2566,7 @@ void pxikVolumeSliceWidget::Rotate(double *p1, double *p2, double *vpn)
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::GeneratePlaneOutline()
+void VTKCustomResliceWidget::GeneratePlaneOutline()
 {
 	vtkPoints* points = vtkPoints::New(VTK_DOUBLE);
 	points->SetNumberOfPoints(4);
@@ -2763,14 +2597,12 @@ void pxikVolumeSliceWidget::GeneratePlaneOutline()
 	planeOutlineMapper->SetInputData(this->PlaneOutlinePolyData);
 	planeOutlineMapper->SetResolveCoincidentTopologyToPolygonOffset();
 	this->PlaneOutlineActor->SetMapper(planeOutlineMapper);
-
-	//Pickalbe로 수정할것
 	this->PlaneOutlineActor->PickableOff();
 	planeOutlineMapper->Delete();
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::GenerateTexturePlane()
+void VTKCustomResliceWidget::GenerateTexturePlane()
 {
 	this->SetResliceInterpolate(this->ResliceInterpolate);
 
@@ -2797,7 +2629,7 @@ void pxikVolumeSliceWidget::GenerateTexturePlane()
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::GenerateMargins()
+void VTKCustomResliceWidget::GenerateMargins()
 {
 	// Construct initial points
 	vtkPoints* points = vtkPoints::New(VTK_DOUBLE);
@@ -2835,7 +2667,7 @@ void pxikVolumeSliceWidget::GenerateMargins()
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::GenerateCursor()
+void VTKCustomResliceWidget::GenerateCursor()
 {
 	// Construct initial points
 	//
@@ -2870,7 +2702,7 @@ void pxikVolumeSliceWidget::GenerateCursor()
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::GenerateText()
+void VTKCustomResliceWidget::GenerateText()
 {
 	snprintf(this->TextBuff, VTK_IMAGE_PLANE_WIDGET_MAX_TEXTBUFF, "NA");
 	this->TextActor->SetInput(this->TextBuff);
@@ -2894,7 +2726,7 @@ void pxikVolumeSliceWidget::GenerateText()
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::UpdateMargins()
+void VTKCustomResliceWidget::UpdateMargins()
 {
 	double v1[3];
 	this->GetVector1(v1);
@@ -2949,7 +2781,7 @@ void pxikVolumeSliceWidget::UpdateMargins()
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::Translate(double *p1, double *p2)
+void VTKCustomResliceWidget::Translate(double *p1, double *p2)
 {
 	// Get the motion vector
 	//
@@ -3067,7 +2899,7 @@ void pxikVolumeSliceWidget::Translate(double *p1, double *p2)
 }
 
 //----------------------------------------------------------------------------
-void pxikVolumeSliceWidget::Scale(double *p1, double *p2,
+void VTKCustomResliceWidget::Scale(double *p1, double *p2,
 	int vtkNotUsed(X), int Y)
 {
 	// Get the motion vector

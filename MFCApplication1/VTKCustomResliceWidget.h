@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef pxikVTKReslicePlaneWidget_h
-#define pxikVTKReslicePlaneWidget_h
+#ifndef VTKCustomResliceWidget_h
+#define VTKCustomResliceWidget_h
 
 #include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkPolyDataSourceWidget.h"
@@ -33,21 +33,232 @@ class vtkTransform;
 #define VTK_IMAGE_PLANE_WIDGET_MAX_TEXTBUFF   128
 
 
-class pxikVolumeSliceWidget : public vtkPolyDataSourceWidget
-{
 
+class VTKCustomResliceWidget : vtkPolyDataSourceWidget
+{
+	/////////////////////////////////////////////
+	/*
+	*					member
+	*/
+	/////////////////////////////////////////////
+
+public:
+protected:
+	//좌표값 텍스트 보임 여부
+	int TextureVisiblility			= 0;
+
+	int LeftButtonAction			= -1;
+	int MiddleButtonAction			= -1;
+	int RightButtonAction			= -1;
+
+	int LeftButtonAutoModifier		= 0;
+	int MiddleButtonAutoModifier	= 0;
+	int RightButtonAutoModifier		= 0;
+
+	enum WIDGET_MousePress : int
+	{
+		VTK_NO_BUTTON = 0,
+		VTK_LEFT_BUTTON = 1,
+		VTK_MIDDLE_BUTTON = 2,
+		VTK_RIGHT_BUTTON = 3
+	};
+	int LastButtonPressed			= 0;
+
+	// Manage the state of the widget
+	int State;
+	enum : int
+	{
+		Start = 0,
+		Cursoring,
+		WindowLevelling,
+		Pushing,
+		Spinning,
+		Rotating,
+		Moving,
+		Scaling,
+		Outside
+	};
+
+
+	// Handles the events
+	static void ProcessEvents(vtkObject* object,
+		unsigned long event,
+		void* clientdata,
+		void* calldata);
+
+	// internal utility method that adds observers to the RenderWindowInteractor
+	// so that our ProcessEvents is eventually called.  this method is called
+	// by SetEnabled as well as SetInteraction
+	void AddObservers();
+
+	virtual void OnMouseMove();
+	virtual void OnLeftButtonDown();
+	virtual void OnLeftButtonUp();
+	//확대
+	virtual void OnMouseWheelForward();
+	//축소
+	virtual void OnMouseWheelBackward();
+
+	void OnChar() override;
+
+
+	virtual void StartCursor();
+	virtual void StopCursor();
+	virtual void StartSliceMotion();
+	virtual void StopSliceMotion();
+	virtual void StartWindowLevel();
+	virtual void StopWindowLevel();
+
+
+	// controlling ivars
+	int    Interaction; // Is the widget responsive to mouse events
+	int    PlaneOrientation;
+	int    RestrictPlaneToVolume;
+
+	//이미지 밝기용, 쓸모 없을듯
+	double OriginalWindow;
+	double OriginalLevel;
+	double CurrentWindow;
+	double CurrentLevel;
+	double InitialWindow;
+	double InitialLevel;
+	int    StartWindowLevelPositionX;
+	int    StartWindowLevelPositionY;
+	
+	//Reslice 용
+	int    ResliceInterpolate;
+	//수치값 용(??)
+	int    TextureInterpolate;
+	//Reslice 이미지에 색상 입히기용
+	int    UserControlledLookupTable;
+	//텍스트용
+	int    DisplayText;
+
+	// Reslice Plane, Outline용
+	vtkPlaneSource    *PlaneSource;
+	vtkPolyData       *PlaneOutlinePolyData;
+	vtkActor          *PlaneOutlineActor;
+
+	void               HighlightPlane(int highlight);
+	void               GeneratePlaneOutline();
+
+	// Re-builds the plane outline based on the plane source
+	void BuildRepresentation();
+
+
+	// 피커, plane의 모서리 또는 내용 선택에 따라 다른 값을 줌
+	vtkAbstractPropPicker *PlanePicker;
+
+
+	// Register internal Pickers within PickingManager
+	//picker 객체의 Register (Reference numberr) 관리용인듯
+	void RegisterPickers() override;
+
+
+	// for negative window values.
+	// 밝기 수치값인듯
+	void InvertTable();
+
+	// Methods to manipulate the plane
+	// 실제 동작 정의
+	void WindowLevel(int X, int Y);
+	void Push(double *p1, double *p2);
+	void Spin(double *p1, double *p2);
+	void Rotate(double *p1, double *p2, double *vpn);
+	void Scale(double *p1, double *p2, int X, int Y);
+	void Translate(double *p1, double *p2);
+
+	//Reslice image Objects
+	vtkImageData         *ImageData;
+	vtkImageReslice      *Reslice;
+	vtkMatrix4x4         *ResliceAxes;
+	vtkTransform         *Transform;
+	vtkActor             *TexturePlaneActor;
+	vtkImageMapToColors  *ColorMap;
+	vtkTexture           *Texture;
+	vtkLookupTable       *LookupTable;
+	vtkLookupTable       *CreateDefaultLookupTable();
+
+	// Properties used to control the appearance of selected objects and
+	// the manipulator in general.  The plane property is actually that for
+	// the outline.  The TexturePlaneProperty can be used to control the
+	// lighting etc. of the resliced image data.
+	
+	//Texture 는 화면의 밝기 조절
+
+	vtkProperty   *PlaneProperty;
+	vtkProperty   *SelectedPlaneProperty;
+	vtkProperty   *CursorProperty;
+	vtkProperty   *MarginProperty;
+	vtkProperty   *TexturePlaneProperty;
+	void           CreateDefaultProperties();
+
+	// Reslice and texture management
+	void UpdatePlane();
+	void GenerateTexturePlane();
+
+	// The cross-hair cursor
+	// 마우스 커서 댈때 좌표위치랑 값 뜨게 하는 그 동작을 말하는듯
+
+	vtkPolyData       *CursorPolyData;
+	vtkActor          *CursorActor;
+	double             CurrentCursorPosition[3];
+	double             CurrentImageValue; // Set to VTK_DOUBLE_MAX when invalid
+	void               GenerateCursor();
+	void               UpdateCursor(int, int);
+	void               ActivateCursor(int);
+	int                UpdateContinuousCursor(double *q);
+	int                UpdateDiscreteCursor(double *q);
+	int                UseContinuousCursor;
+
+	// The text to display W/L, image data
+	// 좌표 문장 출력
+	vtkTextActor *TextActor;
+	char          TextBuff[VTK_IMAGE_PLANE_WIDGET_MAX_TEXTBUFF];
+	void          GenerateText();
+	void          ManageTextDisplay();
+	void          ActivateText(int);
+
+	// Oblique reslice control
+	//회전된 Reslice 제어
+	double RotateAxis[3];
+	double RadiusVector[3];
+	void  AdjustState();
+
+	// Visible margins to assist user interaction
+	//마진값 나타내고 그리는곳인듯
+	vtkPolyData       *MarginPolyData;
+	vtkActor          *MarginActor;
+	int                MarginSelectMode;
+	void               GenerateMargins();
+	void               UpdateMargins();
+	void               ActivateMargins(int);
+	double             MarginSizeX;
+	double             MarginSizeY;
+
+
+private:
+
+
+
+	/////////////////////////////////////////////
+	/*
+	*					method
+	*/
+	/////////////////////////////////////////////
 public:
 	/*!
 	 * Instantiate the object.
 	 */
-	static pxikVolumeSliceWidget *New();
-	vtkTypeMacro(pxikVolumeSliceWidget, vtkPolyDataSourceWidget);
+	static VTKCustomResliceWidget *New();
+	vtkTypeMacro(VTKCustomResliceWidget, vtkPolyDataSourceWidget);
 	void PrintSelf(ostream& os, vtkIndent indent) override;
 
 
 	//@{
 	/**
 	 * Methods that satisfy the superclass' API.
+	 * XYZ 조건에 맞는 평면의 좌표지정에 사용함
 	 */
 	void SetEnabled(int) override;
 	void PlaceWidget(double bounds[6]) override;
@@ -55,6 +266,7 @@ public:
 	{
 		this->Superclass::PlaceWidget();
 	}
+	// 뭐하는 놈인지 모르겠음 안쓸듯
 	void PlaceWidget(double xmin, double xmax, double ymin, double ymax,
 		double zmin, double zmax) override
 	{
@@ -108,6 +320,7 @@ public:
 	//@{
 	/**
 	 * Get the normal to the plane.
+	 * 평면 수직 벡터값
 	 */
 	double* GetNormal();
 	void GetNormal(double xyz[3]);
@@ -115,37 +328,44 @@ public:
 
 	/**
 	 * Get the vector from the plane origin to point1.
+	 * 원점에서 point1 까지의 벡터
 	 */
 	void GetVector1(double v1[3]);
 
 	/**
 	 * Get the vector from the plane origin to point2.
+	 * 원점에서 point2 까지의 벡터
 	 */
 	void GetVector2(double v2[3]);
 
 	/**
 	 * Get the slice position in terms of the data extent.
+	 * slice 인덱스 (좌표값) 구하기(x,y,z 인 경우)
 	 */
 	int GetSliceIndex();
 
 	/**
 	 * Set the slice position in terms of the data extent.
+	 * slice 인덱스 (좌표값) 설정하기(x,y,z 인 경우)
 	 */
 	void SetSliceIndex(int index);
 
 	/**
 	 * Get the position of the slice along its normal.
+	 * 수직벡터일 경우 (X,y,z) 축만 이동 시 위치값 구함
 	 */
 	double GetSlicePosition();
 
 	/**
 	 * Set the position of the slice along its normal.
+	 * 수직벡터일 경우 (X,y,z) 축만 이동 시 위치값 설정
 	 */
 	void SetSlicePosition(double position);
 
 	//@{
 	/**
 	 * Set the interpolation to use when texturing the plane.
+	 * 이미지 보간(뽀샵)
 	 */
 	void SetResliceInterpolate(int);
 	vtkGetMacro(ResliceInterpolate, int);
@@ -165,6 +385,7 @@ public:
 
 	/**
 	 * Convenience method to get the vtkImageReslice output.
+	 * 잘라낸이미지 배출
 	 */
 	vtkImageData* GetResliceOutput();
 
@@ -172,6 +393,7 @@ public:
 	/**
 	 * Make sure that the plane remains within the volume.
 	 * Default is On.
+	 * 볼륨과 이미지를 같이 출력할 것인지를 묻는 것
 	 */
 	vtkSetMacro(RestrictPlaneToVolume, int);
 	vtkGetMacro(RestrictPlaneToVolume, int);
@@ -183,6 +405,7 @@ public:
 	 * Let the user control the lookup table. NOTE: apply this method BEFORE
 	 * applying the SetLookupTable method.
 	 * Default is Off.
+	 * 색상 테이블
 	 */
 	vtkSetMacro(UserControlledLookupTable, int);
 	vtkGetMacro(UserControlledLookupTable, int);
@@ -195,6 +418,7 @@ public:
 	 * reslice interpolation is nearest neighbour regardless of how the
 	 * interpolation is set through the API. Set before setting the
 	 * vtkImageData input. Default is On.
+	 * 제거할것
 	 */
 	vtkSetMacro(TextureInterpolate, int);
 	vtkGetMacro(TextureInterpolate, int);
@@ -205,6 +429,8 @@ public:
 	/**
 	 * Control the visibility of the actual texture mapped reformatted plane.
 	 * in some cases you may only want the plane outline for example.
+	 * 
+	 * 제거할것
 	 */
 	virtual void SetTextureVisibility(int);
 	vtkGetMacro(TextureVisibility, int);
@@ -470,183 +696,12 @@ public:
 	vtkSetClampMacro(RightButtonAutoModifier, int, VTK_NO_MODIFIER, VTK_CONTROL_MODIFIER);
 	vtkGetMacro(RightButtonAutoModifier, int);
 	//@}
-
 protected:
-	pxikVolumeSliceWidget();
-	~pxikVolumeSliceWidget() override;
-
-	int TextureVisibility;
-
-	int LeftButtonAction;
-	int MiddleButtonAction;
-	int RightButtonAction;
-
-	int LeftButtonAutoModifier;
-	int MiddleButtonAutoModifier;
-	int RightButtonAutoModifier;
-
-	enum
-	{
-		VTK_NO_BUTTON = 0,
-		VTK_LEFT_BUTTON = 1,
-		VTK_MIDDLE_BUTTON = 2,
-		VTK_RIGHT_BUTTON = 3
-	};
-	int LastButtonPressed;
-
-	// Manage the state of the widget
-	int State;
-	enum WidgetState
-	{
-		Start = 0,
-		Cursoring,
-		WindowLevelling,
-		Pushing,
-		Spinning,
-		Rotating,
-		Moving,
-		Scaling,
-		Outside
-	};
-
-	// Handles the events
-	static void ProcessEvents(vtkObject* object,
-		unsigned long event,
-		void* clientdata,
-		void* calldata);
-
-	// internal utility method that adds observers to the RenderWindowInteractor
-	// so that our ProcessEvents is eventually called.  this method is called
-	// by SetEnabled as well as SetInteraction
-	void AddObservers();
-
-	// ProcessEvents() dispatches to these methods.
-	virtual void OnMouseMove();
-	virtual void OnLeftButtonDown();
-	virtual void OnLeftButtonUp();
-	virtual void OnMiddleButtonDown();
-	virtual void OnMiddleButtonUp();
-	virtual void OnRightButtonDown();
-	virtual void OnRightButtonUp();
-	void OnChar() override;
-
-	virtual void StartCursor();
-	virtual void StopCursor();
-	virtual void StartSliceMotion();
-	virtual void StopSliceMotion();
-	virtual void StartWindowLevel();
-	virtual void StopWindowLevel();
-
-	// controlling ivars
-	int    Interaction; // Is the widget responsive to mouse events
-	int    PlaneOrientation;
-	int    RestrictPlaneToVolume;
-	double OriginalWindow;
-	double OriginalLevel;
-	double CurrentWindow;
-	double CurrentLevel;
-	double InitialWindow;
-	double InitialLevel;
-	int    StartWindowLevelPositionX;
-	int    StartWindowLevelPositionY;
-	int    ResliceInterpolate;
-	int    TextureInterpolate;
-	int    UserControlledLookupTable;
-	int    DisplayText;
-
-	// The geometric represenation of the plane and it's outline
-	vtkPlaneSource    *PlaneSource;
-	vtkPolyData       *PlaneOutlinePolyData;
-	vtkActor          *PlaneOutlineActor;
-	void               HighlightPlane(int highlight);
-	void               GeneratePlaneOutline();
-
-	// Re-builds the plane outline based on the plane source
-	void BuildRepresentation();
-
-	// Do the picking
-	vtkAbstractPropPicker *PlanePicker;
-
-	// Register internal Pickers within PickingManager
-	void RegisterPickers() override;
-
-	// for negative window values.
-	void InvertTable();
-
-	// Methods to manipulate the plane
-	void WindowLevel(int X, int Y);
-	void Push(double *p1, double *p2);
-	void Spin(double *p1, double *p2);
-	void Rotate(double *p1, double *p2, double *vpn);
-	void Scale(double *p1, double *p2, int X, int Y);
-	void Translate(double *p1, double *p2);
-
-	vtkImageData         *ImageData;
-	vtkImageReslice      *Reslice;
-	vtkMatrix4x4         *ResliceAxes;
-	vtkTransform         *Transform;
-	vtkActor             *TexturePlaneActor;
-	vtkImageMapToColors  *ColorMap;
-	vtkTexture           *Texture;
-	vtkLookupTable       *LookupTable;
-	vtkLookupTable       *CreateDefaultLookupTable();
-
-	// Properties used to control the appearance of selected objects and
-	// the manipulator in general.  The plane property is actually that for
-	// the outline.  The TexturePlaneProperty can be used to control the
-	// lighting etc. of the resliced image data.
-	vtkProperty   *PlaneProperty;
-	vtkProperty   *SelectedPlaneProperty;
-	vtkProperty   *CursorProperty;
-	vtkProperty   *MarginProperty;
-	vtkProperty   *TexturePlaneProperty;
-	void           CreateDefaultProperties();
-
-	// Reslice and texture management
-	void UpdatePlane();
-	void GenerateTexturePlane();
-
-	// The cross-hair cursor
-	vtkPolyData       *CursorPolyData;
-	vtkActor          *CursorActor;
-	double             CurrentCursorPosition[3];
-	double             CurrentImageValue; // Set to VTK_DOUBLE_MAX when invalid
-	void               GenerateCursor();
-	void               UpdateCursor(int, int);
-	void               ActivateCursor(int);
-	int                UpdateContinuousCursor(double *q);
-	int                UpdateDiscreteCursor(double *q);
-	int                UseContinuousCursor;
-
-	// The text to display W/L, image data
-	vtkTextActor *TextActor;
-	char          TextBuff[VTK_IMAGE_PLANE_WIDGET_MAX_TEXTBUFF];
-	void          GenerateText();
-	void          ManageTextDisplay();
-	void          ActivateText(int);
-
-	// Oblique reslice control
-	double RotateAxis[3];
-	double RadiusVector[3];
-	void  AdjustState();
-
-	// Visible margins to assist user interaction
-	vtkPolyData       *MarginPolyData;
-	vtkActor          *MarginActor;
-	int                MarginSelectMode;
-	void               GenerateMargins();
-	void               UpdateMargins();
-	void               ActivateMargins(int);
-	double             MarginSizeX;
-	double             MarginSizeY;
-
-
-	//TEST
-	bool CursorTest = false;
+	VTKCustomResliceWidget();
+	~VTKCustomResliceWidget() override;
 private:
-	pxikVolumeSliceWidget(const pxikVolumeSliceWidget&) = delete;
-	void operator=(const pxikVolumeSliceWidget&) = delete;
+	VTKCustomResliceWidget(const VTKCustomResliceWidget&) = delete;
+	void operator=(const VTKCustomResliceWidget&) = delete;
 };
 
 #endif
-

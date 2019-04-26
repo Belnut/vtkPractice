@@ -19,6 +19,12 @@
     <Filter Include="헤더 파일\CustomVTKClass-headFile">
       <UniqueIdentifier>{7f7798e9-11b0-4ac4-b94c-8040c28e5554}</UniqueIdentifier>
     </Filter>
+    <Filter Include="소스 파일\CustomVTKClass-SrcFile\UI">
+      <UniqueIdentifier>{349b5f1e-9ca0-4c11-9053-1209eab00f56}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\CustomVTKClass-headFile\UI">
+      <UniqueIdentifier>{55bb1702-79be-4977-b053-49463519df15}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MFCApplication1.h">
@@ -48,6 +54,24 @@
     <ClInclude Include="pxikVolumeSliceWidget.h">
       <Filter>헤더 파일\CustomVTKClass-headFile</Filter>
     </ClInclude>
+    <ClInclude Include="VTKCustomResliceWidget.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="pxikVTKButtonWidget.h">
+      <Filter>헤더 파일\CustomVTKClass-headFile</Filter>
+    </ClInclude>
+    <ClInclude Include="TestClass.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="pxikVTKPanel.h">
+      <Filter>헤더 파일\CustomVTKClass-headFile</Filter>
+    </ClInclude>
+    <ClInclude Include="pxikVTKUI.h">
+      <Filter>헤더 파일\CustomVTKClass-headFile\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="pxikVTKUIWidgetRepresentation.h">
+      <Filter>헤더 파일\CustomVTKClass-headFile\UI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MFCApplication1.cpp">
@@ -70,6 +94,24 @@
     </ClCompile>
     <ClCompile Include="pxikVolumeSliceWidget.cpp">
       <Filter>소스 파일\CustomVTKClass-SrcFile</Filter>
+    </ClCompile>
+    <ClCompile Include="VTKCustomResliceWidget.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="pxikVTKButtonWidget.cpp">
+      <Filter>소스 파일\CustomVTKClass-SrcFile</Filter>
+    </ClCompile>
+    <ClCompile Include="TestClass.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="pxikVTKPanel.cpp">
+      <Filter>소스 파일\CustomVTKClass-SrcFile</Filter>
+    </ClCompile>
+    <ClCompile Include="pxikVTKUI.cpp">
+      <Filter>소스 파일\CustomVTKClass-SrcFile\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="pxikVTKUIWidgetRepresentation.cpp">
+      <Filter>소스 파일\CustomVTKClass-SrcFile\UI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
