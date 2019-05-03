@@ -181,4 +181,6 @@ public:
 	double getSingleHistogramValue(double x);
 	double getSingleHistogramValue(int x);
 	void setResizeHistogram(int pitch);
+
+	void setSilderWiget();
 };

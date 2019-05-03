@@ -79,8 +79,33 @@
 #include <vtkCamera.h>
 #include <vtkContextInteractorStyle.h>
 
+#include <vtkSliderWidget.h>
+#include <vtkSliderRepresentation2D.h>
+
+
+
+class vtkSliderCallback : public vtkCommand
+{
+public:
+	static vtkSliderCallback *New()
+	{
+		return new vtkSliderCallback;
+	}
+	virtual void Execute(vtkObject *caller, unsigned long, void*)
+	{
+		vtkSliderWidget *sliderWidget =
+			reinterpret_cast<vtkSliderWidget*>(caller);
+		this->represent->GetFrameProperty()->SetOpacity(static_cast<vtkSliderRepresentation *>(sliderWidget->GetRepresentation())->GetValue());
+		//this->represent->BuildRepresentation();
+	}
+	vtkSliderCallback() :represent(0) {}
+	pxikVTKUIWidgetRepresentation *represent;
+};
+
+
+
 #ifdef _DEBUG
-#define new DEBUG_NEW
+//#define new DEBUG_NEW
 #endif
 
 
@@ -351,7 +376,8 @@ void CMFCApplication1Dlg::OnBnClickedButton1()
 	//balloonTest();
 	addPanel();
 	addHistogram();
-	addChart();
+	//addChart();
+	setSilderWiget();
 
 	
 }
@@ -504,6 +530,7 @@ void CMFCApplication1Dlg::VtkCubeTest()
 	m_vtkWindow->AddRenderer(renderer);
 	m_vtkWindow->Render();
 }
+
 
 void CMFCApplication1Dlg::SmartVtkCubeTest()
 {
@@ -2048,8 +2075,6 @@ void CMFCApplication1Dlg::addCustomButton()
 	
 }
 
-
-
 void CMFCApplication1Dlg::CreateImage(vtkSmartPointer<vtkImageData> image, void* data, int width, int height)
 {
 	// Specify the size of the image data
@@ -2263,6 +2288,7 @@ void CMFCApplication1Dlg::addPanel()
 		);
 
 	m_pxikVTKUIRepresentation->setSize(250, 250);
+	m_pxikVTKUIRepresentation->GetFrameProperty()->SetOpacity(1);
 
 	m_pxikVTKUI->SetInteractor(m_vtkInteractor);
 	m_pxikVTKUI->SetRepresentation(m_pxikVTKUIRepresentation);
@@ -2313,14 +2339,14 @@ void CMFCApplication1Dlg::addChart()
 	table->AddColumn(arrH);
 
 	// Test charting with a few more points...
-	int numPoints = size[0];
+	int numPoints = 65536;
 	double inc = 65536 / size[0];
 	table->SetNumberOfRows(numPoints);
 	//table->SetNumberOfRows(numPoints);
 	for (int i = 0; i < numPoints; ++i)
 	{
 		table->SetValue(i, 0, i);
-		table->SetValue(i, 1, this->getSingleHistogramValue( i*inc ));
+		table->SetValue(i, 1, this->getSingleHistogramValue( i ));
 	}
 
 	// Add multiple line plots, setting the colors etc
@@ -2342,6 +2368,8 @@ void CMFCApplication1Dlg::addChart()
 	m_vtkInteractor->Start();
 	
 }
+
+#pragma region Histogram
 
 void CMFCApplication1Dlg::addHistogram()
 {
@@ -2464,8 +2492,38 @@ void CMFCApplication1Dlg::setResizeHistogram(int pitch)
 	}
 }
 
+#pragma endregion
 
-
-class vtkSliceImageMove : public vtkInteractorStyle
+void CMFCApplication1Dlg::setSilderWiget()
 {
-};
+	vtkSmartPointer<vtkSliderWidget> widget	= vtkSmartPointer<vtkSliderWidget>::New();
+	vtkSmartPointer<vtkSliderRepresentation2D> represent = vtkSmartPointer<vtkSliderRepresentation2D>::New();
+	represent->ShowSliderLabelOn();
+	represent->SetMinimumValue(0);
+	represent->SetMaximumValue(1);
+	represent->SetValue(50);
+
+	represent->GetPoint1Coordinate()->SetCoordinateSystemToDisplay();
+	represent->GetPoint1Coordinate()->SetValue(650, 250);
+	represent->GetPoint2Coordinate()->SetCoordinateSystemToDisplay();
+	represent->GetPoint2Coordinate()->SetValue(850, 250);
+	//represent->SetTubeWidth(0.05);
+	represent->SetEndCapLength(0);
+	//represent->ShowSliderLabelOff();
+	represent->Highlight(1);
+
+	//represent->SetHandleSize();
+	//represent->SetSliderLength();
+	//represent->BuildRepresentation();
+
+	widget->SetRepresentation(represent);
+	widget->SetInteractor(m_vtkInteractor);
+	widget->On();
+
+	vtkSmartPointer<vtkSliderCallback> callback = vtkSmartPointer<vtkSliderCallback>::New();
+	callback->represent = this->m_pxikVTKUIRepresentation;
+	widget->AddObserver(vtkCommand::InteractionEvent, callback);
+
+	m_vtkInteractor->Start();
+}
+
