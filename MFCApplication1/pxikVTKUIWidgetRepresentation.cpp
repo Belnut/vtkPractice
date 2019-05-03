@@ -11,8 +11,8 @@ vtkStandardNewMacro(pxikVTKUIWidgetRepresentation);
 pxikVTKUIWidgetRepresentation::pxikVTKUIWidgetRepresentation()
 {
 	// Initially we are not visible
-	this->Visibility = 0;
-	this->FrameVisible = 0;
+	this->Visibility = 1;
+	this->FrameVisible = 1;
 
 	//// Balloon related
 	//this->BalloonText = nullptr;
@@ -211,7 +211,7 @@ void pxikVTKUIWidgetRepresentation::BuildRepresentation()
 				//}
 			
 
-			
+			this->AdjustFrameSize(frameSize);
 
 			// Reposition the origin of the balloon if it's off the renderer
 			if (e[0] < 0)
@@ -243,7 +243,7 @@ void pxikVTKUIWidgetRepresentation::BuildRepresentation()
 
 		// Update the properties
 		this->FrameActor->SetProperty(this->FrameProperty);
-
+		
 		this->BuildTime.Modified();
 	}
 }
@@ -379,6 +379,9 @@ void pxikVTKUIWidgetRepresentation::setSize(int width, int height)
 	m_width = width;
 	m_height = height;
 
+	FrameSize[0] = width;
+	FrameSize[1] = height;
+
 	this->Modified();
 }
 
@@ -388,6 +391,9 @@ int * pxikVTKUIWidgetRepresentation::getSize()
 	int* size = new int[2];
 	size[0] = m_width;
 	size[1] = m_height;
+
+	this->FrameSize[0] = m_width;
+	this->FrameSize[1] = m_height;
 
 	return size;
 }
@@ -405,19 +411,17 @@ void pxikVTKUIWidgetRepresentation::AdjustFrameSize(double frameSize[2])
 		tmp = m_parent->getSize();
 		parentSize[0] = tmp[0];
 		parentSize[1] = tmp[1];
+		delete tmp;
 	}
 	else
 	{ 
-		//꼬인다 시.....
-		//render연결 전에 미리 생성되기 때문임
-		//render연결 후 한번 업데이트를 시도해야함
 
 		//아님 연결되고 시작할때 Bulid되는 걸 확인함
 		tmp = this->Renderer->GetSize();
 		parentSize[0] = tmp[0];
 		parentSize[1] = tmp[1];
 	}
-	delete tmp;
+
 
 	if (m_margin & marginLeft && m_margin & marginRight)
 		frameSize[0] = parentSize[0] - (m_marginTopValue + m_marginBtmValue);

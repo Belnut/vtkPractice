@@ -62,7 +62,8 @@ void pxikVTKButtonWidget::SelectAction(vtkAbstractWidget *s)
 	vtkButtonWidget::SelectAction(s);
 	if (self->m_isSelected)
 	{ 
-		self->startFunc();
+		//다른 클래스의 함수(외부의 객체 메서드 포인터)
+		//self->startFunc();
 		
 	}
 	else

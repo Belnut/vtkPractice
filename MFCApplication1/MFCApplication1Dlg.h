@@ -101,6 +101,10 @@ public:
 	int m_dcmExtent[6];
 
 
+	unsigned int*	m_histOriginData = nullptr;
+	unsigned int*	m_histResizeData = nullptr;
+	int m_maxHeight = 0;
+
 	enum PlaneLoc
 	{
 		TOP = 0,
@@ -170,4 +174,11 @@ public:
 	void balloonTest();
 
 	void addPanel();
+	void addChart();
+	
+	
+	void addHistogram();
+	double getSingleHistogramValue(double x);
+	double getSingleHistogramValue(int x);
+	void setResizeHistogram(int pitch);
 };

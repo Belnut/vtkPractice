@@ -52,7 +52,6 @@ pxikVolumeTrackBallCamera::~pxikVolumeTrackBallCamera()
 
 void pxikVolumeTrackBallCamera::OnLeftButtonDown()
 {
-
 }
 
 void pxikVolumeTrackBallCamera::OnLeftButtonUp()

@@ -60,11 +60,24 @@
 #include "pxikVTKUI.h"
 #include "pxikVTKUIWidgetRepresentation.h"
 
+#include <vtkNew.h>
+#include <vtkChartXY.h>
 
-
-
-
-
+#include <vtkNamedColors.h>
+#include <vtkActor.h>
+#include <vtkContextScene.h>
+#include <vtkContextActor.h>
+#include <vtkCubeSource.h>
+#include <vtkFloatArray.h>
+#include <vtkPlotPoints.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkProperty.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkTable.h>
+#include <vtkCamera.h>
+#include <vtkContextInteractorStyle.h>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -337,6 +350,9 @@ void CMFCApplication1Dlg::OnBnClickedButton1()
 
 	//balloonTest();
 	addPanel();
+	addHistogram();
+	addChart();
+
 	
 }
 
@@ -2241,19 +2257,214 @@ void CMFCApplication1Dlg::addPanel()
 	this->m_pxikVTKUI = vtkSmartPointer<pxikVTKUI>::New();
 	this->m_pxikVTKUIRepresentation = vtkSmartPointer<pxikVTKUIWidgetRepresentation>::New();
 
-	m_pxikVTKUIRepresentation->setMargin(
-		pxikVTKUIWidgetRepresentation::marginTop |
-		pxikVTKUIWidgetRepresentation::marginBtm |
-		pxikVTKUIWidgetRepresentation::marginLeft |
-		pxikVTKUIWidgetRepresentation::marginRight,
-		10);
+	m_pxikVTKUIRepresentation->setMargin(10,
+		pxikVTKUIWidgetRepresentation::marginRight |
+		pxikVTKUIWidgetRepresentation::marginLeft 
+		);
+
+	m_pxikVTKUIRepresentation->setSize(250, 250);
 
 	m_pxikVTKUI->SetInteractor(m_vtkInteractor);
 	m_pxikVTKUI->SetRepresentation(m_pxikVTKUIRepresentation);
 
 	m_pxikVTKUI->EnabledOn();
-	m_vtkInteractor->Start();
+	//m_vtkInteractor->Start();
 }
+
+void CMFCApplication1Dlg::addChart()
+{
+	vtkNew<vtkNamedColors> colors;
+
+	//m_vtkRenderer->ResetCamera();
+	//m_vtkRenderer->GetActiveCamera()->SetPosition(1.0, 1.0, -4.0);
+	//m_vtkRenderer->GetActiveCamera()->Azimuth(40);
+
+
+	// Now the chart
+	vtkNew<vtkChartXY> chart;
+	vtkNew<vtkContextScene> chartScene;
+	vtkNew<vtkContextActor> chartActor;
+
+	int* windowSize = m_vtkRenderer->GetSize();
+	int size[2];
+
+	size[0] = windowSize[0] - ((15 * 2) + 30);
+	size[1] = 220;
+
+	chart->SetAutoSize(false);
+	chart->SetSize(vtkRectf(15.0, 15.0, size[0], size[1]));
+
+	chartScene->AddItem(chart);
+	chartActor->SetScene(chartScene);
+
+	//both needed
+	m_vtkRenderer->AddActor(chartActor);
+	chartScene->SetRenderer(m_vtkRenderer);
+
+	// Create a table with some points in it...
+	vtkNew<vtkTable> table;
+
+	vtkNew<vtkFloatArray> arrX;
+	arrX->SetName("X Axis");
+	table->AddColumn(arrX);
+
+	vtkNew<vtkFloatArray> arrH;
+	arrH->SetName("Histogram");
+	table->AddColumn(arrH);
+
+	// Test charting with a few more points...
+	int numPoints = size[0];
+	double inc = 65536 / size[0];
+	table->SetNumberOfRows(numPoints);
+	//table->SetNumberOfRows(numPoints);
+	for (int i = 0; i < numPoints; ++i)
+	{
+		table->SetValue(i, 0, i);
+		table->SetValue(i, 1, this->getSingleHistogramValue( i*inc ));
+	}
+
+	// Add multiple line plots, setting the colors etc
+	vtkColor3d color3d = colors->GetColor3d("Red");
+
+	vtkPlot *points = chart->AddPlot(vtkChart::LINE);
+	points->SetInputData(table, 0, 1);
+	points->SetColor(1.0, .0, .0);
+	points->SetWidth(1.0);
+
+	m_vtkWindow->SetMultiSamples(2);
+	m_vtkRenderer->Render();
+
+	vtkSmartPointer<vtkContextInteractorStyle> iterStyle = vtkSmartPointer<vtkContextInteractorStyle>::New();
+	iterStyle->SetScene(chartScene);
+	iterStyle->SetInteractor(m_vtkInteractor);
+	//m_vtkInteractor->SetInteractorStyle(iterStyle);
+	m_vtkInteractor->Initialize();
+	m_vtkInteractor->Start();
+	
+}
+
+void CMFCApplication1Dlg::addHistogram()
+{
+	if (m_histOriginData != nullptr)
+		free(m_histOriginData);
+
+	if (m_histResizeData != nullptr)
+		free(m_histResizeData);
+
+	m_histOriginData = nullptr;
+	m_histResizeData = nullptr;
+
+	int m_startIdx, m_endIdx;
+
+	switch (1)
+	{
+	case 0:
+		m_startIdx = SHRT_MIN;
+		m_endIdx = SHRT_MAX;
+
+		m_histOriginData = (unsigned int*)malloc(sizeof(int) * (USHRT_MAX + 1));
+		memset(m_histOriginData, 0, (USHRT_MAX + 1) * sizeof(int));
+		break;
+	case 1:
+		m_startIdx = 0;
+		m_endIdx = USHRT_MAX;
+
+		m_histOriginData = (unsigned int*)malloc(sizeof(int) * (USHRT_MAX + 1));
+		memset(m_histOriginData, 0, (USHRT_MAX + 1) * sizeof(int));
+		break;
+	default:
+		break;
+	}
+
+
+	int size = 1024 * 1024 * 100;
+
+	switch (1)
+	{
+	case 0:
+	{
+		short *Picker = (short*)m_vtkVolumeImageData->GetScalarPointer();
+		for (int i = 0; i < size; i++)
+			m_histOriginData[Picker[i] - m_startIdx]++;
+	}
+	break;
+	case 1:
+	{
+		unsigned short	*Picker = (unsigned short*)m_vtkVolumeImageData->GetScalarPointer();
+		for (int i = 0; i < size; i++)
+			m_histOriginData[Picker[i] - m_startIdx]++;
+	}
+	break;
+	default:
+		break;
+	}
+
+	m_maxHeight = 0;
+	for (int x = 0; x < USHRT_MAX + 1; x++)
+	{
+		if (m_maxHeight < (int)m_histOriginData[x])
+			m_maxHeight = (int)m_histOriginData[x];
+	}
+
+
+}
+
+double CMFCApplication1Dlg::getSingleHistogramValue(double x)
+{
+	return this->getSingleHistogramValue((int)round(x));
+}
+
+double CMFCApplication1Dlg::getSingleHistogramValue(int x)
+{
+	if (m_histOriginData[x] < 2)
+		return 0;
+
+	return log2(m_histOriginData[x]) / log2(m_maxHeight);
+}
+
+void CMFCApplication1Dlg::setResizeHistogram(int pitch)
+{
+	int m_pitch = (USHRT_MAX + 1) / pitch;
+	int m_pitchStartIdx, m_pitchEndIdx;
+
+
+	switch (1)
+	{
+	case 0:
+	{
+		m_pitchStartIdx = -pitch / 2;
+		m_pitchEndIdx = +pitch / 2 - 1;
+	}
+	break;
+	case 1:
+	{
+		m_pitchStartIdx = 0;
+		m_pitchEndIdx = pitch - 1;
+	}
+	default:
+		break;
+	}
+
+	if (m_histResizeData != nullptr)
+		free(m_histResizeData);
+
+	m_histResizeData = (unsigned int*)malloc(sizeof(int) * pitch);
+	memset(m_histResizeData, 0, (pitch) * sizeof(int));
+
+	int m_pitchMaxHeight = 0;
+	for (int i = 0; i < pitch; i++)
+	{
+		for (int j = 0; j < m_pitch; j++)
+			m_histResizeData[i] += m_histOriginData[(m_pitch * i) + j];
+
+		m_histResizeData[i] /= m_pitch;
+
+		if (m_pitchMaxHeight < (int)m_histResizeData[i])
+			m_pitchMaxHeight = m_histResizeData[i];
+	}
+}
+
+
 
 class vtkSliceImageMove : public vtkInteractorStyle
 {
