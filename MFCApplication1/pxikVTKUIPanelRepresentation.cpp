@@ -1,18 +1,24 @@
 #include "stdafx.h"
-#include "pxikVTKUIWidgetRepresentation.h"
-#include "vtkBalloonRepresentation.h"
-#include "vtkImageMapper.h"
-#include "vtkActor2D.h"
-#include "vtkProperty2D.h"
+#include "pxikVTKUIWidgetAbstractRepresentation.h"
+#include "pxikVTKUIPanelRepresentation.h"
 
-vtkStandardNewMacro(pxikVTKUIWidgetRepresentation);
+
+
+vtkStandardNewMacro(pxikVTKUIPanelRepresentation);
 
 //----------------------------------------------------------------------
-pxikVTKUIWidgetRepresentation::pxikVTKUIWidgetRepresentation()
+pxikVTKUIPanelRepresentation::pxikVTKUIPanelRepresentation()
 {
 	// Initially we are not visible
 	this->Visibility = 1;
 	this->FrameVisible = 1;
+
+
+	m_Geometry.X = -1;
+	m_Geometry.Y = -1;
+	m_Geometry.Width = -1;
+	m_Geometry.Height = -1;
+
 
 	//// Balloon related
 	//this->BalloonText = nullptr;
@@ -54,9 +60,9 @@ pxikVTKUIWidgetRepresentation::pxikVTKUIWidgetRepresentation()
 	//this->ImageProperty->SetOpacity(1.0);
 	//this->TextureActor->SetProperty(this->ImageProperty);
 
-	// Controlling layout
-	this->Offset[0] = 10;
-	this->Offset[1] = 10;
+	//// Controlling layout
+	//this->Offset[0] = 0;
+	//this->Offset[1] = 0;
 
 	// Controlling Color
 	this->Color[0] = 0.949;
@@ -67,6 +73,7 @@ pxikVTKUIWidgetRepresentation::pxikVTKUIWidgetRepresentation()
 	// The frame
 	this->FramePoints = vtkPoints::New();
 	this->FramePoints->SetNumberOfPoints(4);
+
 	this->FramePolygon = vtkCellArray::New();
 	this->FramePolygon->Allocate(this->FramePolygon->EstimateSize(1, 5));
 	this->FramePolygon->InsertNextCell(4);
@@ -74,13 +81,17 @@ pxikVTKUIWidgetRepresentation::pxikVTKUIWidgetRepresentation()
 	this->FramePolygon->InsertCellPoint(1);
 	this->FramePolygon->InsertCellPoint(2);
 	this->FramePolygon->InsertCellPoint(3);
+
 	this->FramePolyData = vtkPolyData::New();
 	this->FramePolyData->SetPoints(this->FramePoints);
 	this->FramePolyData->SetPolys(this->FramePolygon);
+
 	this->FrameMapper = vtkPolyDataMapper2D::New();
 	this->FrameMapper->SetInputData(this->FramePolyData);
+
 	this->FrameActor = vtkActor2D::New();
 	this->FrameActor->SetMapper(this->FrameMapper);
+
 	this->FrameProperty = vtkProperty2D::New();
 	this->FrameProperty->SetColor(this->Color);
 	this->FrameProperty->SetOpacity(this->Opacity);
@@ -88,7 +99,7 @@ pxikVTKUIWidgetRepresentation::pxikVTKUIWidgetRepresentation()
 }
 
 //----------------------------------------------------------------------
-pxikVTKUIWidgetRepresentation::~pxikVTKUIWidgetRepresentation()
+pxikVTKUIPanelRepresentation::~pxikVTKUIPanelRepresentation()
 {
 	// The frame
 	this->FramePoints->Delete();
@@ -101,7 +112,7 @@ pxikVTKUIWidgetRepresentation::~pxikVTKUIWidgetRepresentation()
 
 
 //----------------------------------------------------------------------
-void pxikVTKUIWidgetRepresentation::StartWidgetInteraction(double e[2])
+void pxikVTKUIPanelRepresentation::StartWidgetInteraction(double e[2])
 {
 	this->StartEventPosition[0] = e[0];
 	this->StartEventPosition[1] = e[1];
@@ -109,13 +120,13 @@ void pxikVTKUIWidgetRepresentation::StartWidgetInteraction(double e[2])
 }
 
 //----------------------------------------------------------------------
-void pxikVTKUIWidgetRepresentation::EndWidgetInteraction(double e[2])
+void pxikVTKUIPanelRepresentation::EndWidgetInteraction(double e[2])
 {
 	this->VisibilityOff();
 }
 
 //----------------------------------------------------------------------
-void pxikVTKUIWidgetRepresentation::BuildRepresentation()
+void pxikVTKUIPanelRepresentation::BuildRepresentation()
 {
 	if (this->GetMTime() > this->BuildTime ||
 		(this->Renderer && this->Renderer->GetVTKWindow() &&
@@ -140,13 +151,13 @@ void pxikVTKUIWidgetRepresentation::BuildRepresentation()
 		e[0] = static_cast<double>(this->StartEventPosition[0] + this->Offset[0]);
 		e[1] = static_cast<double>(this->StartEventPosition[1] + this->Offset[1]);
 
-		
+
 		// Layout the text and image
 		if (this->FrameVisible)
 		{
 			io[0] = 0.0;
 			io[1] = 0.0;
-			
+
 			//this->AdjustImageSize(imageSize);
 				//if (this->BalloonLayout == ImageTop)
 				//{
@@ -209,7 +220,7 @@ void pxikVTKUIWidgetRepresentation::BuildRepresentation()
 				//	so[0] = this->Padding;
 				//	so[1] = length / 2.0 - stringSize[1] / 2.0;
 				//}
-			
+
 
 			this->AdjustFrameSize(frameSize);
 
@@ -243,13 +254,13 @@ void pxikVTKUIWidgetRepresentation::BuildRepresentation()
 
 		// Update the properties
 		this->FrameActor->SetProperty(this->FrameProperty);
-		
+
 		this->BuildTime.Modified();
 	}
 }
 
 //----------------------------------------------------------------------
-int pxikVTKUIWidgetRepresentation::ComputeInteractionState(int X, int Y, int modify)
+int pxikVTKUIPanelRepresentation::ComputeInteractionState(int X, int Y, int modify)
 {
 	// Is it in the text region or the image region?
 	double x0[3], x2[3];
@@ -271,21 +282,21 @@ int pxikVTKUIWidgetRepresentation::ComputeInteractionState(int X, int Y, int mod
 		}
 		if ((x0[0] <= X && X <= x2[0]) && (x0[1] <= Y && Y <= x2[1]))
 		{
-			return pxikVTKUIWidgetRepresentation::Onside;
+			return pxikVTKUIPanelRepresentation::Onside;
 		}
 	}
 
-	return pxikVTKUIWidgetRepresentation::Outside;
+	return pxikVTKUIPanelRepresentation::Outside;
 }
 
 //----------------------------------------------------------------------
-void pxikVTKUIWidgetRepresentation::ReleaseGraphicsResources(vtkWindow * w)
+void pxikVTKUIPanelRepresentation::ReleaseGraphicsResources(vtkWindow * w)
 {
 	this->FrameActor->ReleaseGraphicsResources(w);
 }
 
 //----------------------------------------------------------------------
-int pxikVTKUIWidgetRepresentation::RenderOverlay(vtkViewport * v)
+int pxikVTKUIPanelRepresentation::RenderOverlay(vtkViewport * v)
 {
 	int count = 0;
 	this->BuildRepresentation();
@@ -299,7 +310,7 @@ int pxikVTKUIWidgetRepresentation::RenderOverlay(vtkViewport * v)
 }
 
 //----------------------------------------------------------------------
-void pxikVTKUIWidgetRepresentation::setMargin(int value, int margin)
+void pxikVTKUIPanelRepresentation::setMargin(int value, int margin)
 {
 	int cmpMargin = 0;
 
@@ -332,13 +343,13 @@ void pxikVTKUIWidgetRepresentation::setMargin(int value, int margin)
 }
 
 //----------------------------------------------------------------------
-int pxikVTKUIWidgetRepresentation::getMargin(int margin)
+int pxikVTKUIPanelRepresentation::getMargin(int margin)
 {
 	return m_margin;
 }
 
 //----------------------------------------------------------------------
-void pxikVTKUIWidgetRepresentation::removeAllMargin()
+void pxikVTKUIPanelRepresentation::removeAllMargin()
 {
 	m_margin = 0;
 	m_marginTopValue = 0;
@@ -349,7 +360,7 @@ void pxikVTKUIWidgetRepresentation::removeAllMargin()
 	this->Modified();
 }
 //----------------------------------------------------------------------
-void pxikVTKUIWidgetRepresentation::setPosition(int x, int y)
+void pxikVTKUIPanelRepresentation::setPosition(int x, int y)
 {
 
 	if (x < 0 || y < 0)
@@ -364,7 +375,7 @@ void pxikVTKUIWidgetRepresentation::setPosition(int x, int y)
 }
 
 //----------------------------------------------------------------------
-int * pxikVTKUIWidgetRepresentation::getPosition()
+int * pxikVTKUIPanelRepresentation::getPosition()
 {
 	int* position = new int[2];
 	position[0] = m_PositionX;
@@ -374,7 +385,7 @@ int * pxikVTKUIWidgetRepresentation::getPosition()
 }
 
 //----------------------------------------------------------------------
-void pxikVTKUIWidgetRepresentation::setSize(int width, int height)
+void pxikVTKUIPanelRepresentation::setSize(int width, int height)
 {
 	m_width = width;
 	m_height = height;
@@ -386,7 +397,7 @@ void pxikVTKUIWidgetRepresentation::setSize(int width, int height)
 }
 
 //----------------------------------------------------------------------
-int * pxikVTKUIWidgetRepresentation::getSize()
+int * pxikVTKUIPanelRepresentation::getSize()
 {
 	int* size = new int[2];
 	size[0] = m_width;
@@ -399,7 +410,7 @@ int * pxikVTKUIWidgetRepresentation::getSize()
 }
 
 //----------------------------------------------------------------------
-void pxikVTKUIWidgetRepresentation::AdjustFrameSize(double frameSize[2])
+void pxikVTKUIPanelRepresentation::AdjustFrameSize(double frameSize[2])
 {
 	frameSize[0] = FrameSize[0];
 	frameSize[1] = FrameSize[1];
@@ -407,14 +418,14 @@ void pxikVTKUIWidgetRepresentation::AdjustFrameSize(double frameSize[2])
 	int parentSize[2] = { 0,0 };
 	int *tmp = nullptr;
 	if (m_parent != nullptr)
-	{ 
+	{
 		tmp = m_parent->getSize();
 		parentSize[0] = tmp[0];
 		parentSize[1] = tmp[1];
 		delete tmp;
 	}
 	else
-	{ 
+	{
 
 		//아님 연결되고 시작할때 Bulid되는 걸 확인함
 		tmp = this->Renderer->GetSize();
@@ -430,18 +441,18 @@ void pxikVTKUIWidgetRepresentation::AdjustFrameSize(double frameSize[2])
 		frameSize[1] = parentSize[1] - (m_marginTopValue + m_marginBtmValue);
 }
 
-void pxikVTKUIWidgetRepresentation::AdjustFramePosition(double * framePosition)
+void pxikVTKUIPanelRepresentation::AdjustFramePosition(double * framePosition)
 {
 }
 
 //----------------------------------------------------------------------
-int * pxikVTKUIWidgetRepresentation::getUIPosition()
+int * pxikVTKUIPanelRepresentation::getUIPosition()
 {
 	return nullptr;
 }
 
 //----------------------------------------------------------------------
-int * pxikVTKUIWidgetRepresentation::getUISize()
+int * pxikVTKUIPanelRepresentation::getUISize()
 {
 	////TODO: 해당값이 실제 이미지의 Bound룰 가져오는지 애매함 
 	////      확인할 것
@@ -456,14 +467,14 @@ int * pxikVTKUIWidgetRepresentation::getUISize()
 }
 
 //----------------------------------------------------------------------
-void pxikVTKUIWidgetRepresentation::ScaleImage(double imageSize[2], double scale)
+void pxikVTKUIPanelRepresentation::ScaleImage(double imageSize[2], double scale)
 {
 }
 
-void pxikVTKUIWidgetRepresentation::PrintSelf(ostream & os, vtkIndent indent)
+void pxikVTKUIPanelRepresentation::PrintSelf(ostream & os, vtkIndent indent)
 {
 }
 
-void pxikVTKUIWidgetRepresentation::SetFrameProperty(vtkProperty2D * p)
+void pxikVTKUIPanelRepresentation::SetFrameProperty(vtkProperty2D * p)
 {
 }

@@ -82,6 +82,10 @@
 #include <vtkSliderWidget.h>
 #include <vtkSliderRepresentation2D.h>
 
+#include <vtkCommand.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
 
 
 class vtkSliderCallback : public vtkCommand
@@ -2508,6 +2512,9 @@ void CMFCApplication1Dlg::setSilderWiget()
 	represent->GetPoint2Coordinate()->SetCoordinateSystemToDisplay();
 	represent->GetPoint2Coordinate()->SetValue(850, 250);
 	//represent->SetTubeWidth(0.05);
+	represent->SetEndCapLength(0.0);
+	represent->set
+
 	represent->SetEndCapLength(0);
 	//represent->ShowSliderLabelOff();
 	represent->Highlight(1);
@@ -2523,6 +2530,8 @@ void CMFCApplication1Dlg::setSilderWiget()
 	vtkSmartPointer<vtkSliderCallback> callback = vtkSmartPointer<vtkSliderCallback>::New();
 	callback->represent = this->m_pxikVTKUIRepresentation;
 	widget->AddObserver(vtkCommand::InteractionEvent, callback);
+
+	
 
 	m_vtkInteractor->Start();
 }

@@ -1,40 +1,43 @@
 
-#ifndef pxikVTKUI_h
-#define pxikVTKUI_h
+#ifndef pxikVTKUIAbstractWidget_h
+#define pxikVTKUIAbstractWidget_h
 
 #include <vtkAbstractWidget.h>
+#include <list>
 
 class vtkImageMapper;
 
-class pxikVTKUI : public vtkAbstractWidget
+class pxikVTKUIAbstractWidget : public vtkAbstractWidget
 {
 public:
 
 	/*!
 	 * Instantiate the object.
 	 */
-	static pxikVTKUI *New();
-	vtkTypeMacro(pxikVTKUI, vtkAbstractWidget);
+	vtkTypeMacro(pxikVTKUIAbstractWidget, vtkAbstractWidget);
 	void PrintSelf(ostream& os, vtkIndent indent) override;
 
-	void CreateDefaultRepresentation() override;
+	virtual void CreateDefaultRepresentation() = 0;
 
 	void SetRepresentation(vtkWidgetRepresentation *r)
 	{
 		this->Superclass::SetWidgetRepresentation(reinterpret_cast<vtkWidgetRepresentation*>(r));
 	}
 
-	pxikVTKUI();
-	~pxikVTKUI();
+
 
 	//UI끼리의 연결을 위한 Parts
-	std::vector<pxikVTKUI*>	 m_uiList;
-	pxikVTKUI				*m_parentUI;
-	void addUI(pxikVTKUI *);
-	void removeUI( pxikVTKUI * );
-	void setParentUI( pxikVTKUI *);
-	void removeParentUI();
+	std::list<pxikVTKUIAbstractWidget*>		 m_uiList;
+	pxikVTKUIAbstractWidget					*m_parentUI;
+	void addUI(pxikVTKUIAbstractWidget *);
+	void removeUI(pxikVTKUIAbstractWidget * );
 	
+	//@{
+	//please set this functions protected
+	void setParentUI(pxikVTKUIAbstractWidget *);
+	void removeParentUI();
+	//@}
+
 	//배경 관련 part
 	vtkImageData *m_backgroundImage;
 	void setBackgroundImage(vtkImageData * src);
@@ -155,6 +158,10 @@ public:
 	void OnChar() override;
 
 	void SetEnabled(int) override;
+
+private:
+	pxikVTKUIAbstractWidget();
+	~pxikVTKUIAbstractWidget();
 };
 
 #endif

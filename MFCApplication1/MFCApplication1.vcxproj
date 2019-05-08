@@ -201,10 +201,11 @@
     <ClInclude Include="pxikVTKPanel.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="pxikVTKUI.h">
+    <ClInclude Include="pxikVTKUIAbstractWidget.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="pxikVTKUIWidgetRepresentation.h">
+    <ClInclude Include="pxikVTKUIPanelRepresentation.h" />
+    <ClInclude Include="pxikVTKUIWidgetAbstractRepresentation.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="TestClass.h" />
@@ -227,10 +228,11 @@
     <ClCompile Include="pxikVTKPanel.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="pxikVTKUI.cpp">
+    <ClCompile Include="pxikVTKUIAbstractWidget.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="pxikVTKUIWidgetRepresentation.cpp">
+    <ClCompile Include="pxikVTKUIPanelRepresentation.cpp" />
+    <ClCompile Include="pxikVTKUIWidgetAbstractRepresentation.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="TestClass.cpp" />

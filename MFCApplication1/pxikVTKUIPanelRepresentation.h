@@ -1,21 +1,16 @@
 #pragma once
-#include "vtkWidgetRepresentation.h"
-
-
-
-class pxikVTKUIWidgetRepresentation : public vtkWidgetRepresentation
+#include "pxikVTKUIPanelRepresentation.h"
+class pxikVTKUIPanelRepresentation :
+	public pxikVTKUIWidgetAbstractRepresentation
 {
-public:
-	/**
-	 * Instantiate the class.
-	 */
-	static pxikVTKUIWidgetRepresentation *New();
 
+public:
+	static pxikVTKUIPanelRepresentation *New();
 	//@{
-	/**
-	 * Standard VTK methods.
-	 */
-	vtkTypeMacro(pxikVTKUIWidgetRepresentation, vtkWidgetRepresentation);
+		/**
+		 * Standard VTK methods.
+		 */
+	vtkTypeMacro(pxikVTKUIPanelRepresentation, pxikVTKUIWidgetAbstractRepresentation);
 	void PrintSelf(ostream& os, vtkIndent indent) override;
 	//@}
 
@@ -166,8 +161,8 @@ public:
 	};
 
 protected:
-	pxikVTKUIWidgetRepresentation();
-	~pxikVTKUIWidgetRepresentation() override;
+	pxikVTKUIPanelRepresentation();
+	~pxikVTKUIPanelRepresentation() override;
 
 	//// Frame image (temp value. It will maybe be deleted)
 	//vtkImageData *BalloonImage;
@@ -177,8 +172,8 @@ protected:
 	int Offset[2];
 	//int ImageSize[2];
 	int FrameSize[2];
-	
-	pxikVTKUIWidgetRepresentation *m_parent = nullptr;
+
+	pxikVTKUIPanelRepresentation *m_parent = nullptr;
 	//// Represent the image
 	//vtkTexture          *Texture;
 	//vtkPolyData         *TexturePolyData;
@@ -197,16 +192,16 @@ protected:
 
 	// Internal variable controlling rendering process
 	int FrameVisible;
-	
+
 	double Color[3];
 	double Opacity;
-	
+
 
 	// Helper methods
 	void ScaleImage(double imageSize[2], double scale);
 
 private:
-	pxikVTKUIWidgetRepresentation(const pxikVTKUIWidgetRepresentation&) = delete;
-	void operator=(const pxikVTKUIWidgetRepresentation&) = delete;
+	pxikVTKUIPanelRepresentation(const pxikVTKUIPanelRepresentation&) = delete;
+	void operator=(const pxikVTKUIPanelRepresentation&) = delete;
 };
 

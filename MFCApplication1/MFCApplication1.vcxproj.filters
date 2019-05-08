@@ -25,6 +25,12 @@
     <Filter Include="헤더 파일\CustomVTKClass-headFile\UI">
       <UniqueIdentifier>{55bb1702-79be-4977-b053-49463519df15}</UniqueIdentifier>
     </Filter>
+    <Filter Include="헤더 파일\CustomVTKClass-headFile\UI\Base">
+      <UniqueIdentifier>{bae54b96-8c19-4f1a-a01f-04e637009b4e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\CustomVTKClass-SrcFile\UI\Base">
+      <UniqueIdentifier>{1bf800bc-257a-4e98-93ac-88062295fc74}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MFCApplication1.h">
@@ -66,11 +72,14 @@
     <ClInclude Include="pxikVTKPanel.h">
       <Filter>헤더 파일\CustomVTKClass-headFile</Filter>
     </ClInclude>
-    <ClInclude Include="pxikVTKUI.h">
+    <ClInclude Include="pxikVTKUIPanelRepresentation.h">
       <Filter>헤더 파일\CustomVTKClass-headFile\UI</Filter>
     </ClInclude>
-    <ClInclude Include="pxikVTKUIWidgetRepresentation.h">
-      <Filter>헤더 파일\CustomVTKClass-headFile\UI</Filter>
+    <ClInclude Include="pxikVTKUIAbstractWidget.h">
+      <Filter>헤더 파일\CustomVTKClass-headFile\UI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="pxikVTKUIWidgetAbstractRepresentation.h">
+      <Filter>헤더 파일\CustomVTKClass-headFile\UI\Base</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -107,10 +116,13 @@
     <ClCompile Include="pxikVTKPanel.cpp">
       <Filter>소스 파일\CustomVTKClass-SrcFile</Filter>
     </ClCompile>
-    <ClCompile Include="pxikVTKUI.cpp">
-      <Filter>소스 파일\CustomVTKClass-SrcFile\UI</Filter>
+    <ClCompile Include="pxikVTKUIAbstractWidget.cpp">
+      <Filter>소스 파일\CustomVTKClass-SrcFile\UI\Base</Filter>
     </ClCompile>
-    <ClCompile Include="pxikVTKUIWidgetRepresentation.cpp">
+    <ClCompile Include="pxikVTKUIWidgetAbstractRepresentation.cpp">
+      <Filter>소스 파일\CustomVTKClass-SrcFile\UI\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="pxikVTKUIPanelRepresentation.cpp">
       <Filter>소스 파일\CustomVTKClass-SrcFile\UI</Filter>
     </ClCompile>
   </ItemGroup>
