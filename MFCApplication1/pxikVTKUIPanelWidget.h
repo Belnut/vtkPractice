@@ -4,6 +4,7 @@
 
 
 #include "pxikVTKUIAbstractWidget.h"
+class pxikVTKUIPanelRepresentation;
 
 class pxikVTKUIPanelWidget :
 	public pxikVTKUIAbstractWidget
@@ -18,15 +19,48 @@ public:
 
 	virtual void CreateDefaultRepresentation() override;
 
-	void SetRepresentation(vtkWidgetRepresentation *r)
+	void SetRepresentation(pxikVTKUIPanelRepresentation *r)
 	{
-		this->Superclass::SetWidgetRepresentation(reinterpret_cast<vtkWidgetRepresentation*>(r));
+		this->Superclass::SetWidgetRepresentation(reinterpret_cast<pxikVTKUIWidgetAbstractRepresentation*>(r));
 	}
 
+	vtkImageData *m_backgroundImage;
+
+	struct color_t {
+		double red, green, blue;
+
+		color_t()
+		{
+			red = 0;
+			green = 0;
+			blue = 0;
+		}
+
+		void setcolor(double _red, double _green, double _blue)
+		{
+			red = _red;
+			green = _green;
+			blue = _blue;
+		}
+
+	};
+
+
+	struct color_t m_backgroundColor;
+	void setBackgroundColor(color_t);
+	void setBackgroundColor(double _red, double _green, double _blue);
+	void getBackgroundColor(double*, double*, double*);
+
+
+	void SetEnabled(int) override;
+
+protected:
+	pxikVTKUIPanelWidget();
+	~pxikVTKUIPanelWidget() override;
 
 private:
-	pxikVTKUIPanelWidget();
-	~pxikVTKUIPanelWidget();
+	pxikVTKUIPanelWidget(const pxikVTKUIPanelWidget&) = delete;
+	void operator=(const pxikVTKUIPanelWidget&) = delete;
 };
 #endif
 

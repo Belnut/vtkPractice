@@ -57,8 +57,10 @@
 #include <vtkBalloonRepresentation.h>
 #include <vtkBalloonWidget.h>
 
-#include "pxikVTKUI.h"
-#include "pxikVTKUIWidgetRepresentation.h"
+//#include "pxikVTKUI.h"
+//#include "pxikVTKUIWidgetRepresentation.h"
+#include "pxikVTKUIPanelWidget.h"
+#include "pxikVTKUIPanelRepresentation.h"
 
 #include <vtkNew.h>
 #include <vtkChartXY.h>
@@ -103,7 +105,7 @@ public:
 		//this->represent->BuildRepresentation();
 	}
 	vtkSliderCallback() :represent(0) {}
-	pxikVTKUIWidgetRepresentation *represent;
+	pxikVTKUIPanelRepresentation *represent;
 };
 
 
@@ -2283,12 +2285,12 @@ void CMFCApplication1Dlg::balloonTest()
 
 void CMFCApplication1Dlg::addPanel()
 {
-	this->m_pxikVTKUI = vtkSmartPointer<pxikVTKUI>::New();
-	this->m_pxikVTKUIRepresentation = vtkSmartPointer<pxikVTKUIWidgetRepresentation>::New();
+	this->m_pxikVTKUI = vtkSmartPointer<pxikVTKUIPanelWidget>::New();
+	this->m_pxikVTKUIRepresentation = vtkSmartPointer<pxikVTKUIPanelRepresentation>::New();
 
 	m_pxikVTKUIRepresentation->setMargin(10,
-		pxikVTKUIWidgetRepresentation::marginRight |
-		pxikVTKUIWidgetRepresentation::marginLeft 
+		pxikVTKUIPanelRepresentation::marginRight |
+		pxikVTKUIPanelRepresentation::marginLeft
 		);
 
 	m_pxikVTKUIRepresentation->setSize(250, 250);
@@ -2513,7 +2515,7 @@ void CMFCApplication1Dlg::setSilderWiget()
 	represent->GetPoint2Coordinate()->SetValue(850, 250);
 	//represent->SetTubeWidth(0.05);
 	represent->SetEndCapLength(0.0);
-	represent->set
+	//represent->set
 
 	represent->SetEndCapLength(0);
 	//represent->ShowSliderLabelOff();

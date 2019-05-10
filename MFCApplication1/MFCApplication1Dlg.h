@@ -8,8 +8,8 @@
 #include "pxikVolumeSliceWidget.h"
 #include "pxikVTKButtonWidget.h"
 
-#include "pxikVTKUI.h"
-#include "pxikVTKUIWidgetRepresentation.h"
+#include "pxikVTKUIPanelWidget.h"
+#include "pxikVTKUIPanelRepresentation.h"
 
 
 // CMFCApplication1Dlg 대화 상자
@@ -82,8 +82,8 @@ public:
 	vtkSmartPointer<pxikVolumeTrackBallCamera>		m_pxikVolumeTrackBallCamera = nullptr;
 	vtkSmartPointer<pxikVolumeSliceWidget>			m_pxikVolumeSliceWidget = nullptr;
 	vtkSmartPointer<pxikVTKButtonWidget>			m_buttonWidget = nullptr;
-	vtkSmartPointer<pxikVTKUI>						m_pxikVTKUI = nullptr;
-	vtkSmartPointer<pxikVTKUIWidgetRepresentation>	m_pxikVTKUIRepresentation = nullptr;
+	vtkSmartPointer<pxikVTKUIPanelWidget>			m_pxikVTKUI = nullptr;
+	vtkSmartPointer<pxikVTKUIPanelRepresentation>	m_pxikVTKUIRepresentation = nullptr;
 
 	//TestObject;
 	vtkCubeSource*				m_vtkTestCubeSource = NULL;

@@ -1,10 +1,23 @@
 #include "stdafx.h"
+
+#include "vtkProperty2D.h"
+
+
 #include "pxikVTKUIWidgetAbstractRepresentation.h"
 #include "pxikVTKUIPanelRepresentation.h"
 
 
+#include <list>
 
 vtkStandardNewMacro(pxikVTKUIPanelRepresentation);
+
+void pxikVTKUIPanelRepresentation::updateFrameColor(double red, double green, double blue)
+{
+	if (FrameProperty == nullptr)
+		return;
+	FrameProperty->SetColor(red, green, blue);
+	this->Modified();
+}
 
 //----------------------------------------------------------------------
 pxikVTKUIPanelRepresentation::pxikVTKUIPanelRepresentation()
@@ -19,56 +32,9 @@ pxikVTKUIPanelRepresentation::pxikVTKUIPanelRepresentation()
 	m_Geometry.Width = -1;
 	m_Geometry.Height = -1;
 
-
-	//// Balloon related
-	//this->BalloonText = nullptr;
-	//this->BalloonImage = nullptr;
-	//this->BalloonLayout = ImageTop;
-
-	//// Displaying the image in the balloon using texture. Create a quad polygon
-	//// and apply the texture on top of it.
-	//this->ImageSize[0] = 50;
-	//this->ImageSize[1] = 50;
-	//this->Texture = vtkTexture::New();
-	//this->TexturePolyData = vtkPolyData::New();
-	//this->TexturePoints = vtkPoints::New();
-	//this->TexturePoints->SetNumberOfPoints(4);
-	//this->TexturePolyData->SetPoints(this->TexturePoints);
-	//vtkCellArray* polys = vtkCellArray::New();
-	//polys->InsertNextCell(4);
-	//polys->InsertCellPoint(0);
-	//polys->InsertCellPoint(1);
-	//polys->InsertCellPoint(2);
-	//polys->InsertCellPoint(3);
-	//this->TexturePolyData->SetPolys(polys);
-	//polys->Delete();
-	//vtkFloatArray* tc = vtkFloatArray::New();
-	//tc->SetNumberOfComponents(2);
-	//tc->SetNumberOfTuples(4);
-	//tc->InsertComponent(0, 0, 0.0);  tc->InsertComponent(0, 1, 0.0);
-	//tc->InsertComponent(1, 0, 1.0);  tc->InsertComponent(1, 1, 0.0);
-	//tc->InsertComponent(2, 0, 1.0);  tc->InsertComponent(2, 1, 1.0);
-	//tc->InsertComponent(3, 0, 0.0);  tc->InsertComponent(3, 1, 1.0);
-	//this->TexturePolyData->GetPointData()->SetTCoords(tc);
-	//tc->Delete();
-	//this->TextureMapper = vtkPolyDataMapper2D::New();
-	//this->TextureMapper->SetInputData(this->TexturePolyData);
-	//this->TextureActor = vtkTexturedActor2D::New();
-	//this->TextureActor->SetMapper(this->TextureMapper);
-	//this->TextureActor->SetTexture(this->Texture);
-	//this->ImageProperty = vtkProperty2D::New();
-	//this->ImageProperty->SetOpacity(1.0);
-	//this->TextureActor->SetProperty(this->ImageProperty);
-
-	//// Controlling layout
-	//this->Offset[0] = 0;
-	//this->Offset[1] = 0;
-
 	// Controlling Color
-	this->Color[0] = 0.949;
-	this->Color[1] = 0.949;
-	this->Color[2] = 0.949;
 	this->Opacity = 0.5;
+
 
 	// The frame
 	this->FramePoints = vtkPoints::New();
@@ -93,9 +59,12 @@ pxikVTKUIPanelRepresentation::pxikVTKUIPanelRepresentation()
 	this->FrameActor->SetMapper(this->FrameMapper);
 
 	this->FrameProperty = vtkProperty2D::New();
-	this->FrameProperty->SetColor(this->Color);
+	this->FrameProperty->SetColor(0.949, 0.949, 0.949);
 	this->FrameProperty->SetOpacity(this->Opacity);
 	this->FrameActor->SetProperty(this->FrameProperty);
+
+	this->StartEventPosition[0] = 0;
+	this->StartEventPosition[1] = 1;
 }
 
 //----------------------------------------------------------------------
@@ -114,8 +83,8 @@ pxikVTKUIPanelRepresentation::~pxikVTKUIPanelRepresentation()
 //----------------------------------------------------------------------
 void pxikVTKUIPanelRepresentation::StartWidgetInteraction(double e[2])
 {
-	this->StartEventPosition[0] = e[0];
-	this->StartEventPosition[1] = e[1];
+	//this->StartEventPosition[0] = e[0];
+	//this->StartEventPosition[1] = e[1];
 	this->VisibilityOn();
 }
 
@@ -157,70 +126,6 @@ void pxikVTKUIPanelRepresentation::BuildRepresentation()
 		{
 			io[0] = 0.0;
 			io[1] = 0.0;
-
-			//this->AdjustImageSize(imageSize);
-				//if (this->BalloonLayout == ImageTop)
-				//{
-				//	frameSize[1] = stringSize[1] + 2 * this->Padding;
-				//	double length = (imageSize[0] > (stringSize[0] + 2 * this->Padding) ?
-				//		imageSize[0] : (stringSize[0] + 2 * this->Padding));
-				//
-				//	frameSize[0] = length;
-				//	double scale = length / imageSize[0];
-				//	this->ScaleImage(imageSize, scale);
-				//	io[0] = 0.0;
-				//	io[1] = frameSize[1];
-				//	fo[0] = 0.0;
-				//	fo[1] = 0.0;
-				//	so[0] = length / 2.0 - stringSize[0] / 2.0;
-				//	so[1] = this->Padding;
-				//}
-				//else if (this->BalloonLayout == ImageBottom)
-				//{
-				//	frameSize[1] = stringSize[1] + 2 * this->Padding;
-				//	double length = (imageSize[0] > (stringSize[0] + 2 * this->Padding) ?
-				//		imageSize[0] : (stringSize[0] + 2 * this->Padding));
-				//	frameSize[0] = length;
-				//	double scale = length / imageSize[0];
-				//	this->ScaleImage(imageSize, scale);
-				//	io[0] = 0.0;
-				//	io[1] = 0.0;
-				//	fo[0] = 0.0;
-				//	fo[1] = imageSize[1];
-				//	so[0] = length / 2.0 - stringSize[0] / 2.0;
-				//	so[1] = imageSize[1] + this->Padding;
-				//}
-				//else if (this->BalloonLayout == ImageLeft)
-				//{
-				//	frameSize[0] = stringSize[0] + 2 * this->Padding;
-				//	double length = (imageSize[1] > (stringSize[1] + 2 * this->Padding) ?
-				//		imageSize[1] : (stringSize[1] + 2 * this->Padding));
-				//	frameSize[1] = length;
-				//	double scale = length / imageSize[1];
-				//	this->ScaleImage(imageSize, scale);
-				//	io[0] = 0.0;
-				//	io[1] = 0.0;
-				//	fo[0] = imageSize[0];
-				//	fo[1] = 0.0;
-				//	so[0] = imageSize[0] + this->Padding;
-				//	so[1] = length / 2.0 - stringSize[1] / 2.0;
-				//}
-				//else if (this->BalloonLayout == ImageRight)
-				//{
-				//	frameSize[0] = stringSize[0] + 2 * this->Padding;
-				//	double length = (imageSize[1] > (stringSize[1] + 2 * this->Padding) ?
-				//		imageSize[1] : (stringSize[1] + 2 * this->Padding));
-				//	frameSize[1] = length;
-				//	double scale = length / imageSize[1];
-				//	this->ScaleImage(imageSize, scale);
-				//	io[0] = frameSize[0];
-				//	io[1] = 0.0;
-				//	fo[0] = 0.0;
-				//	fo[1] = 0.0;
-				//	so[0] = this->Padding;
-				//	so[1] = length / 2.0 - stringSize[1] / 2.0;
-				//}
-
 
 			this->AdjustFrameSize(frameSize);
 
@@ -435,10 +340,16 @@ void pxikVTKUIPanelRepresentation::AdjustFrameSize(double frameSize[2])
 
 
 	if (m_margin & marginLeft && m_margin & marginRight)
-		frameSize[0] = parentSize[0] - (m_marginTopValue + m_marginBtmValue);
+	{
+		frameSize[0] = parentSize[0] - (m_marginLeftValue + m_marginRightValue);
+		this->StartEventPosition[0] = (m_marginLeftValue);
+	}
 
 	if (m_margin & marginTop && m_margin & marginBtm)
+	{
 		frameSize[1] = parentSize[1] - (m_marginTopValue + m_marginBtmValue);
+		this->StartEventPosition[1] = m_marginBtmValue;
+	}
 }
 
 void pxikVTKUIPanelRepresentation::AdjustFramePosition(double * framePosition)

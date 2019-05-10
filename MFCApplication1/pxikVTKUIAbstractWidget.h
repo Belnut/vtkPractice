@@ -5,6 +5,7 @@
 #include <vtkAbstractWidget.h>
 #include <list>
 
+class pxikVTKUIWidgetAbstractRepresentation;
 class vtkImageMapper;
 
 class pxikVTKUIAbstractWidget : public vtkAbstractWidget
@@ -19,7 +20,7 @@ public:
 
 	virtual void CreateDefaultRepresentation() = 0;
 
-	void SetRepresentation(vtkWidgetRepresentation *r)
+	void SetWidgetRepresentation(pxikVTKUIWidgetAbstractRepresentation *r)
 	{
 		this->Superclass::SetWidgetRepresentation(reinterpret_cast<vtkWidgetRepresentation*>(r));
 	}
@@ -135,33 +136,15 @@ public:
 		Hovering
 	};
 
-	// Handles the events
-	static void ProcessEvents(vtkObject* object,
-		unsigned long event,
-		void* clientdata,
-		void* calldata);
-
-	// internal utility method that adds observers to the RenderWindowInteractor
-	// so that our ProcessEvents is eventually called.  this method is called
-	// by SetEnabled as well as SetInteraction
-	void AddObservers();
-
-	// ProcessEvents() dispatches to these methods.
-	virtual void OnMouseMove();
-	virtual void OnLeftButtonDown();
-	virtual void OnLeftButtonUp();
-	virtual void OnMiddleButtonDown();
-	virtual void OnMiddleButtonUp();
-	virtual void OnRightButtonDown();
-	virtual void OnRightButtonUp();
-	virtual void OnMouseHover();
-	void OnChar() override;
-
 	void SetEnabled(int) override;
 
-private:
+protected:
 	pxikVTKUIAbstractWidget();
 	~pxikVTKUIAbstractWidget();
+	
+private:
+	pxikVTKUIAbstractWidget(const pxikVTKUIAbstractWidget&) = delete;
+	void operator=(const pxikVTKUIAbstractWidget&) = delete;
 };
 
 #endif

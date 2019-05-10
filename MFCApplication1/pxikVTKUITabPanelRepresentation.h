@@ -1,19 +1,14 @@
 #pragma once
-#ifndef pxikVTKUIPanelRepresentation_h
-#define pxikVTKUIPanelRepresentation_h
-
-#include "pxikVTKUIWidgetAbstractRepresentation.h"
-class pxikVTKUIPanelRepresentation :
+class pxikVTKUITabPanelRepresentation :
 	public pxikVTKUIWidgetAbstractRepresentation
 {
-
 public:
-	static pxikVTKUIPanelRepresentation *New();
+	static pxikVTKUITabPanelRepresentation *New();
 	//@{
 		/**
 		 * Standard VTK methods.
 		 */
-	vtkTypeMacro(pxikVTKUIPanelRepresentation, pxikVTKUIWidgetAbstractRepresentation);
+	vtkTypeMacro(pxikVTKUITabPanelRepresentation, pxikVTKUIWidgetAbstractRepresentation);
 	void PrintSelf(ostream& os, vtkIndent indent) override;
 	//@}
 
@@ -99,7 +94,11 @@ public:
 	//vtkActor2D *m_UIActor;
 	//vtkImageMapper *m_UIMapper;
 
-	//marign flag
+	int m_margin = 0;
+	int m_marginTopValue = 0;
+	int m_marginBtmValue = 0;
+	int m_marginLeftValue = 0;
+	int m_marginRightValue = 0;
 	enum : int
 	{
 		marginTop = 1,
@@ -159,11 +158,11 @@ public:
 		Hovering
 	};
 
-	void updateFrameColor(double red,double green, double blue);
+	void updateFrameColor(double red, double green, double blue);
 
 protected:
-	pxikVTKUIPanelRepresentation();
-	~pxikVTKUIPanelRepresentation() override;
+	pxikVTKUITabPanelRepresentation();
+	~pxikVTKUITabPanelRepresentation() override;
 
 	//// Frame image (temp value. It will maybe be deleted)
 	//vtkImageData *BalloonImage;
@@ -171,12 +170,10 @@ protected:
 
 	// Controlling placement
 	int Offset[2];
-
 	//int ImageSize[2];
 	int FrameSize[2];
 
-
-	pxikVTKUIPanelRepresentation *m_parent = nullptr;
+	pxikVTKUITabPanelRepresentation *m_parent = nullptr;
 	//// Represent the image
 	//vtkTexture          *Texture;
 	//vtkPolyData         *TexturePolyData;
@@ -193,7 +190,6 @@ protected:
 	vtkActor2D          *FrameActor;
 	vtkProperty2D       *FrameProperty;
 
-
 	// Internal variable controlling rendering process
 	int FrameVisible;
 
@@ -205,8 +201,7 @@ protected:
 	void ScaleImage(double imageSize[2], double scale);
 
 private:
-	pxikVTKUIPanelRepresentation(const pxikVTKUIPanelRepresentation&) = delete;
-	void operator=(const pxikVTKUIPanelRepresentation&) = delete;
+	pxikVTKUITabPanelRepresentation(const pxikVTKUITabPanelRepresentation&) = delete;
+	void operator=(const pxikVTKUITabPanelRepresentation&) = delete;
 };
 
-#endif

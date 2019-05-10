@@ -31,6 +31,30 @@
     <Filter Include="소스 파일\CustomVTKClass-SrcFile\UI\Base">
       <UniqueIdentifier>{1bf800bc-257a-4e98-93ac-88062295fc74}</UniqueIdentifier>
     </Filter>
+    <Filter Include="헤더 파일\CustomVTKClass-headFile\UI\Panel">
+      <UniqueIdentifier>{8ecc200a-5a4b-4a60-b287-823979deda9f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\CustomVTKClass-SrcFile\UI\Panel">
+      <UniqueIdentifier>{bbafdfc8-910a-49e1-94e4-67150b952e1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\CustomVTKClass-SrcFile\UI\tabPanel">
+      <UniqueIdentifier>{c4cd5723-69ab-4b5c-acbe-7c3a2f0288e4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\CustomVTKClass-headFile\UI\tabPanel">
+      <UniqueIdentifier>{50684a29-4ee0-42b5-9276-bf7dabaed30e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\CustomVTKClass-SrcFile\UI\contaion">
+      <UniqueIdentifier>{fce4b0e0-e7d1-4a27-ac63-b1bf8d98b335}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\CustomVTKClass-SrcFile\UI\contaion\button">
+      <UniqueIdentifier>{3b4232f8-cf34-4395-aded-a3a0f54f6ad9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\CustomVTKClass-headFile\UI\contain">
+      <UniqueIdentifier>{cb301748-c99e-4773-ab18-073ee81af2d9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\CustomVTKClass-headFile\UI\contain\button">
+      <UniqueIdentifier>{b9b2d8fd-3bf3-4806-b4ad-a33233923e1b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MFCApplication1.h">
@@ -72,14 +96,32 @@
     <ClInclude Include="pxikVTKPanel.h">
       <Filter>헤더 파일\CustomVTKClass-headFile</Filter>
     </ClInclude>
-    <ClInclude Include="pxikVTKUIPanelRepresentation.h">
-      <Filter>헤더 파일\CustomVTKClass-headFile\UI</Filter>
-    </ClInclude>
     <ClInclude Include="pxikVTKUIAbstractWidget.h">
       <Filter>헤더 파일\CustomVTKClass-headFile\UI\Base</Filter>
     </ClInclude>
     <ClInclude Include="pxikVTKUIWidgetAbstractRepresentation.h">
       <Filter>헤더 파일\CustomVTKClass-headFile\UI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="pxikVTKUIPanelRepresentation.h">
+      <Filter>헤더 파일\CustomVTKClass-headFile\UI\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="pxikVTKUIPanelWidget.h">
+      <Filter>헤더 파일\CustomVTKClass-headFile\UI\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="pxikVTKUITabPanelWidget.h">
+      <Filter>헤더 파일\CustomVTKClass-headFile\UI\tabPanel</Filter>
+    </ClInclude>
+    <ClInclude Include="pxikVTKUITabPanelRepresentation.h">
+      <Filter>헤더 파일\CustomVTKClass-headFile\UI\tabPanel</Filter>
+    </ClInclude>
+    <ClInclude Include="pxikVTKUIButtonWidget.h">
+      <Filter>헤더 파일\CustomVTKClass-headFile\UI\contain\button</Filter>
+    </ClInclude>
+    <ClInclude Include="pxikVTKUIButtonRepresentation.h">
+      <Filter>헤더 파일\CustomVTKClass-headFile\UI\contain\button</Filter>
+    </ClInclude>
+    <ClInclude Include="pxikVTKUITextureButtonRepresentation.h">
+      <Filter>헤더 파일\CustomVTKClass-headFile\UI\contain\button</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -123,7 +165,25 @@
       <Filter>소스 파일\CustomVTKClass-SrcFile\UI\Base</Filter>
     </ClCompile>
     <ClCompile Include="pxikVTKUIPanelRepresentation.cpp">
-      <Filter>소스 파일\CustomVTKClass-SrcFile\UI</Filter>
+      <Filter>소스 파일\CustomVTKClass-SrcFile\UI\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="pxikVTKUIPanelWidget.cpp">
+      <Filter>소스 파일\CustomVTKClass-SrcFile\UI\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="pxikVTKUITabPanelWidget.cpp">
+      <Filter>소스 파일\CustomVTKClass-SrcFile\UI\tabPanel</Filter>
+    </ClCompile>
+    <ClCompile Include="pxikVTKUITabPanelRepresentation.cpp">
+      <Filter>소스 파일\CustomVTKClass-SrcFile\UI\tabPanel</Filter>
+    </ClCompile>
+    <ClCompile Include="pxikVTKUIButtonWidget.cpp">
+      <Filter>소스 파일\CustomVTKClass-SrcFile\UI\contaion\button</Filter>
+    </ClCompile>
+    <ClCompile Include="pxikVTKUIButtonRepresentation.cpp">
+      <Filter>소스 파일\CustomVTKClass-SrcFile\UI\contaion\button</Filter>
+    </ClCompile>
+    <ClCompile Include="pxikVTKUITextureButtonRepresentation.cpp">
+      <Filter>소스 파일\CustomVTKClass-SrcFile\UI\contaion\button</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

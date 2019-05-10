@@ -18,6 +18,10 @@ pxikVTKUIWidgetAbstractRepresentation::pxikVTKUIWidgetAbstractRepresentation()
 	m_Geometry.Y = -1;
 	m_Geometry.Width = -1;
 	m_Geometry.Height = -1;
+
+	StartEventPosition[0] = 0;
+	StartEventPosition[1] = 0;
+
 }
 
 //----------------------------------------------------------------------
@@ -29,8 +33,8 @@ pxikVTKUIWidgetAbstractRepresentation::~pxikVTKUIWidgetAbstractRepresentation()
 //----------------------------------------------------------------------
 void pxikVTKUIWidgetAbstractRepresentation::StartWidgetInteraction(double e[2])
 {
-	this->StartEventPosition[0] = e[0];
-	this->StartEventPosition[1] = e[1];
+	//this->StartEventPosition[0] = e[0];
+	//this->StartEventPosition[1] = e[1];
 	this->VisibilityOn();
 }
 
@@ -53,6 +57,7 @@ void pxikVTKUIWidgetAbstractRepresentation::ReleaseGraphicsResources(vtkWindow *
 //----------------------------------------------------------------------
 int pxikVTKUIWidgetAbstractRepresentation::RenderOverlay(vtkViewport * v)
 {
+	return 0;
 }
 
 //----------------------------------------------------------------------
