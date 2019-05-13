@@ -8,6 +8,7 @@ pxikVTKUIButtonRepresentation::pxikVTKUIButtonRepresentation()
 	this->NumberOfStates = 0;
 	this->State = 0;
 	this->HighlightState = pxikVTKUIButtonRepresentation::HighlightNormal;
+	this->m_shapeStyle = pxikVTKUIButtonRepresentation::Rectangle;
 }
 
 //----------------------------------------------------------------------

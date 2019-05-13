@@ -55,6 +55,12 @@
     <Filter Include="헤더 파일\CustomVTKClass-headFile\UI\contain\button">
       <UniqueIdentifier>{b9b2d8fd-3bf3-4806-b4ad-a33233923e1b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="소스 파일\CustomVTKClass-SrcFile\UI\contaion\Balloon">
+      <UniqueIdentifier>{06581d4c-18b8-4abd-993a-b64db54d16da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\CustomVTKClass-headFile\UI\contain\Balloon">
+      <UniqueIdentifier>{6a55b5f1-5af7-4c05-8eba-af82f2b330c1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MFCApplication1.h">
@@ -123,6 +129,9 @@
     <ClInclude Include="pxikVTKUITextureButtonRepresentation.h">
       <Filter>헤더 파일\CustomVTKClass-headFile\UI\contain\button</Filter>
     </ClInclude>
+    <ClInclude Include="pxikVTKUIBalloonRepresentation.h">
+      <Filter>헤더 파일\CustomVTKClass-headFile\UI\contain\Balloon</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MFCApplication1.cpp">
@@ -184,6 +193,9 @@
     </ClCompile>
     <ClCompile Include="pxikVTKUITextureButtonRepresentation.cpp">
       <Filter>소스 파일\CustomVTKClass-SrcFile\UI\contaion\button</Filter>
+    </ClCompile>
+    <ClCompile Include="pxikVTKUIBalloonRepresentation.cpp">
+      <Filter>소스 파일\CustomVTKClass-SrcFile\UI\contaion\Balloon</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

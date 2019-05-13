@@ -204,6 +204,7 @@
     <ClInclude Include="pxikVTKUIAbstractWidget.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="pxikVTKUIBalloonRepresentation.h" />
     <ClInclude Include="pxikVTKUIButtonRepresentation.h" />
     <ClInclude Include="pxikVTKUIButtonWidget.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
@@ -243,6 +244,7 @@
     <ClCompile Include="pxikVTKUIAbstractWidget.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="pxikVTKUIBalloonRepresentation.cpp" />
     <ClCompile Include="pxikVTKUIButtonRepresentation.cpp" />
     <ClCompile Include="pxikVTKUIButtonWidget.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>

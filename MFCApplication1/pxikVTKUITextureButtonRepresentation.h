@@ -10,8 +10,9 @@ class vtkImageData;
 class vtkTextureArray; //PIMPLd
 class vtkProperty2D;
 class vtkAlgorithmOutput;
-class vtkBalloonRepresentation;
 class vtkCoordinate;
+
+class pxikVTKUIBalloonRepresentation;
 
 class pxikVTKUITextureButtonRepresentation : public pxikVTKUIButtonRepresentation
 {
@@ -67,7 +68,7 @@ public:
 	 * Grab the underlying vtkBalloonRepresentation used to position and display
 	 * the button texture.
 	 */
-	vtkBalloonRepresentation *GetBalloon() { return this->Balloon; }
+	pxikVTKUIBalloonRepresentation *GetBalloon() { return this->Balloon; }
 
 	//@{
 	/**
@@ -111,12 +112,23 @@ public:
 	int HasTranslucentPolygonalGeometry() override;
 	//@}
 
+	//@{
+	/**
+	 * 프래임을 보이게 할지 말지 설정 default = 0;
+	 */
+	void SetFrameVisible(int);
+	int getFrameVisible();
+	//@}
+
 protected:
 	pxikVTKUITextureButtonRepresentation();
 	~pxikVTKUITextureButtonRepresentation() override;
 
 	// Representing the button
-	vtkBalloonRepresentation *Balloon;
+	//vtkBalloonRepresentation *Balloon;
+	pxikVTKUIBalloonRepresentation *Balloon;
+
+
 
 	// Properties of the button
 	vtkProperty2D *Property;

@@ -244,11 +244,28 @@ void pxikVTKUIWidgetAbstractRepresentation::AdjustPosition(double * Position)
 		Position[1] = parentPostion[1] + (parentSize[1] - m_marginTopValue);
 }
 
+//----------------------------------------------------------------------
 void pxikVTKUIWidgetAbstractRepresentation::setOpacity(double opacity)
 {
 	m_opacity = opacity;
 }
 
+//----------------------------------------------------------------------
+void pxikVTKUIWidgetAbstractRepresentation::setShape(int shape)
+{
+	if (shape < 0 || shape > 3)
+		this->m_shapeStyle = Rectangle;
+	else
+		this->m_shapeStyle = shape;
+}
+
+//----------------------------------------------------------------------
+int pxikVTKUIWidgetAbstractRepresentation::getShape()
+{
+	return this->m_shapeStyle;
+}
+
+//----------------------------------------------------------------------
 void pxikVTKUIWidgetAbstractRepresentation::PrintSelf(ostream & os, vtkIndent indent)
 {
 }

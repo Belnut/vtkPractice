@@ -55,57 +55,91 @@ public:
 	 */
 	enum _InteractionState { Outside = 0, Onside };
 
+
+protected:
+	pxikVTKUITabPanelRepresentation();
+	~pxikVTKUITabPanelRepresentation() override;
+
+
 	//@{
 	/**
 	* Frame 크기 등을 결정하는 부분
 	*/
+	//배경 관련 part
+	vtkImageData *m_backgroundImage;
+	void setBackgroundImage(vtkImageData * src);
+	void removeBackgroundImage();
 
-	////배경 관련 part
-	//vtkImageData *m_backgroundImage;
-	//void setBackgroundImage(vtkImageData * src);
-	//void removeBackgroundImage();
-	//
-	//struct color_t {
-	//	double red, green, blue;
-	//
-	//	color_t()
-	//	{
-	//		red = 0;
-	//		green = 0;
-	//		blue = 0;
-	//	}
-	//
-	//	void setcolor(double _red, double _green, double _blue)
-	//	{
-	//		red = _red;
-	//		green = _green;
-	//		blue = _blue;
-	//	}
-	//
-	//};
-	//
-	//struct color_t m_bactgroundColor;
-	//void setBackgroundColor(color_t);
-	//void getBackgroundColor();
-	//
-	//void createImageData(vtkImageData *);
-	//
-	//
-	//vtkActor2D *m_UIActor;
-	//vtkImageMapper *m_UIMapper;
+	struct color_t {
+		double red, green, blue;
+
+		color_t()
+		{
+			red = 0;
+			green = 0;
+			blue = 0;
+		}
+
+		void setcolor(double _red, double _green, double _blue)
+		{
+			red = _red;
+			green = _green;
+			blue = _blue;
+		}
+
+	};
+
+	struct color_t m_bactgroundColor;
+	void setBackgroundColor(color_t);
+	void getBackgroundColor();
+
+	void createImageData(vtkImageData *);
+
+
+	vtkActor2D *m_UIActor;
+	vtkImageMapper *m_UIMapper;
 
 	int m_margin = 0;
 	int m_marginTopValue = 0;
 	int m_marginBtmValue = 0;
 	int m_marginLeftValue = 0;
 	int m_marginRightValue = 0;
-	enum : int
-	{
-		marginTop = 1,
-		marginBtm = 2,
-		marginLeft = 4,
-		marginRight = 8
-	};
+
+	//// Frame image (temp value. It will maybe be deleted)
+	//vtkImageData *BalloonImage;
+
+
+	// Controlling placement
+	int Offset[2];
+	//int ImageSize[2];
+	int FrameSize[2];
+
+	pxikVTKUITabPanelRepresentation *m_parent = nullptr;
+	// Represent the image
+	vtkTexture          *Texture;
+	vtkPolyData         *TexturePolyData;
+	vtkPoints           *TexturePoints;
+	vtkPolyDataMapper2D *TextureMapper;
+	vtkTexturedActor2D  *TextureActor;
+	vtkProperty2D       *ImageProperty;
+
+	// The frame
+	vtkPoints           *FramePoints;
+	vtkCellArray        *FramePolygon;
+	vtkPolyData         *FramePolyData;
+	vtkPolyDataMapper2D *FrameMapper;
+	vtkActor2D          *FrameActor;
+	vtkProperty2D       *FrameProperty;
+
+	// Internal variable controlling rendering process
+	int FrameVisible;
+
+
+	double Opacity;
+
+
+	// Helper methods
+	void ScaleImage(double imageSize[2], double scale);
 
 	void setMargin(int value, int margin);
 	//please use single margin (2^n, 0 <= n <= 3)
@@ -152,53 +186,12 @@ public:
 	int m_state;
 	enum WidgetState
 	{
-		Outside111 = 0,
-		Click,
+		Clicked,
 		Moving,
 		Hovering
 	};
 
 	void updateFrameColor(double red, double green, double blue);
-
-protected:
-	pxikVTKUITabPanelRepresentation();
-	~pxikVTKUITabPanelRepresentation() override;
-
-	//// Frame image (temp value. It will maybe be deleted)
-	//vtkImageData *BalloonImage;
-
-
-	// Controlling placement
-	int Offset[2];
-	//int ImageSize[2];
-	int FrameSize[2];
-
-	pxikVTKUITabPanelRepresentation *m_parent = nullptr;
-	//// Represent the image
-	//vtkTexture          *Texture;
-	//vtkPolyData         *TexturePolyData;
-	//vtkPoints           *TexturePoints;
-	//vtkPolyDataMapper2D *TextureMapper;
-	//vtkTexturedActor2D  *TextureActor;
-	//vtkProperty2D       *ImageProperty;
-
-	// The frame
-	vtkPoints           *FramePoints;
-	vtkCellArray        *FramePolygon;
-	vtkPolyData         *FramePolyData;
-	vtkPolyDataMapper2D *FrameMapper;
-	vtkActor2D          *FrameActor;
-	vtkProperty2D       *FrameProperty;
-
-	// Internal variable controlling rendering process
-	int FrameVisible;
-
-
-	double Opacity;
-
-
-	// Helper methods
-	void ScaleImage(double imageSize[2], double scale);
 
 private:
 	pxikVTKUITabPanelRepresentation(const pxikVTKUITabPanelRepresentation&) = delete;

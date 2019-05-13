@@ -88,6 +88,16 @@ public:
 	//Opacity 설정
 	virtual void setOpacity(double opacity);
 
+	//모양 설정
+	void setShape(int shape);
+	int getShape();
+	enum
+	{
+		Rectangle = 0,
+		Circle,
+		Custom
+	};
+
 	
 
 protected:
@@ -111,6 +121,10 @@ protected:
 
 	//Action
 	int m_state;
+
+
+	//Shape Style
+	int m_shapeStyle;
 	
 private:
 	pxikVTKUIWidgetAbstractRepresentation(const pxikVTKUIWidgetAbstractRepresentation&) = delete;

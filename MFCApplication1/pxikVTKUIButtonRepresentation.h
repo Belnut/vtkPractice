@@ -67,6 +67,8 @@ public:
 	 */
 	void ShallowCopy(vtkProp *prop) override;
 
+	
+
 protected:
 	pxikVTKUIButtonRepresentation();
 	~pxikVTKUIButtonRepresentation() override;
@@ -75,6 +77,8 @@ protected:
 	int NumberOfStates;
 	int State;
 	int HighlightState;
+
+
 
 private:
 	pxikVTKUIButtonRepresentation(const pxikVTKUIButtonRepresentation&) = delete;

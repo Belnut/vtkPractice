@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
 #include "pxikVTKUITextureButtonRepresentation.h"
+#include "pxikVTKUIBalloonRepresentation.h"
 
 #include "vtkBalloonRepresentation.h"
 #include "vtkPolyDataMapper2D.h"
@@ -34,7 +35,7 @@ typedef std::map<int, vtkSmartPointer<vtkImageData> >::iterator vtkTextureArrayI
 pxikVTKUITextureButtonRepresentation::pxikVTKUITextureButtonRepresentation()
 {
 	// Configure the balloon
-	this->Balloon = vtkBalloonRepresentation::New();
+	this->Balloon = pxikVTKUIBalloonRepresentation::New();
 	this->Balloon->SetOffset(0, 0);
 
 	// Set up the initial properties
@@ -262,6 +263,7 @@ void pxikVTKUITextureButtonRepresentation::BuildRepresentation()
 				this->Renderer->GetVTKWindow()->GetMTime() > this->BuildTime))
 	{
 		this->Balloon->SetRenderer(this->Renderer);
+		this->Balloon->setShape(this->getShape());
 
 		// Setup the texture
 		vtkTextureArrayIterator iter = this->TextureArray->find(this->State);
@@ -389,4 +391,18 @@ void pxikVTKUITextureButtonRepresentation::SetHoveringProperty(vtkProperty2D * p
 
 void pxikVTKUITextureButtonRepresentation::SetSelectingProperty(vtkProperty2D * p)
 {
+}
+
+
+
+//----------------------------------------------------------------------
+void pxikVTKUITextureButtonRepresentation::SetFrameVisible(int tf)
+{
+	this->Balloon->setFrameVisible(tf);
+}
+
+//----------------------------------------------------------------------
+int pxikVTKUITextureButtonRepresentation::getFrameVisible()
+{
+	return Balloon->getFrameVisible();
 }

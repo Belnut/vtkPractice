@@ -10,6 +10,7 @@
 
 #include "pxikVTKUIPanelWidget.h"
 #include "pxikVTKUIPanelRepresentation.h"
+#include "pxikVTKUIButtonWidget.h"
 
 
 // CMFCApplication1Dlg 대화 상자
@@ -84,6 +85,7 @@ public:
 	vtkSmartPointer<pxikVTKButtonWidget>			m_buttonWidget = nullptr;
 	vtkSmartPointer<pxikVTKUIPanelWidget>			m_pxikVTKUI = nullptr;
 	vtkSmartPointer<pxikVTKUIPanelRepresentation>	m_pxikVTKUIRepresentation = nullptr;
+	vtkSmartPointer<pxikVTKUIButtonWidget>			m_pxikVTKUIButtonWidget = nullptr;
 
 	//TestObject;
 	vtkCubeSource*				m_vtkTestCubeSource = NULL;
@@ -183,4 +185,5 @@ public:
 	void setResizeHistogram(int pitch);
 
 	void setSilderWiget();
+	void pxikCircleButton();
 };

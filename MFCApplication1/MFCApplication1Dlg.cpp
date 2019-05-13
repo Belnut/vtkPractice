@@ -61,6 +61,9 @@
 //#include "pxikVTKUIWidgetRepresentation.h"
 #include "pxikVTKUIPanelWidget.h"
 #include "pxikVTKUIPanelRepresentation.h"
+#include "pxikVTKUITextureButtonRepresentation.h"
+#include "pxikVTKUIButtonWidget.h"
+
 
 #include <vtkNew.h>
 #include <vtkChartXY.h>
@@ -360,7 +363,9 @@ void CMFCApplication1Dlg::OnBnClickedButton1()
 	//setSliceImageWidgetCustom();
 	//setCustomOrientAxesActor();
 	//ddButton();
-	addCustomButton();
+
+	//this->addCustomButton();
+	this->pxikCircleButton();
 
 	//m_vtkInteractor->SetDesiredUpdateRate(1000);
 
@@ -2538,3 +2543,56 @@ void CMFCApplication1Dlg::setSilderWiget()
 	m_vtkInteractor->Start();
 }
 
+void CMFCApplication1Dlg::pxikCircleButton()
+{
+	vtkSmartPointer<vtkImageData> image1 =
+		vtkSmartPointer<vtkImageData>::New();
+	vtkSmartPointer<vtkImageData> image2 =
+		vtkSmartPointer<vtkImageData>::New();
+
+	cv::Mat resliceOnImage = cv::imread("C:\\Users\\User1\\Downloads\\ResliceOn.png", cv::IMREAD_GRAYSCALE);
+	cv::Mat resliceOffImage = cv::imread("C:\\Users\\User1\\Downloads\\ResliceOff.png", cv::IMREAD_GRAYSCALE);
+
+	CreateImage(image1, resliceOnImage.data, 50, 50);
+	CreateImage(image2, resliceOffImage.data, 50, 50);
+
+
+
+	vtkSmartPointer<pxikVTKUITextureButtonRepresentation> buttonRepresentation =
+		vtkSmartPointer<pxikVTKUITextureButtonRepresentation>::New();
+	buttonRepresentation->SetNumberOfStates(2);
+	buttonRepresentation->SetButtonTexture(0, image1);
+	buttonRepresentation->SetButtonTexture(1, image2);
+	buttonRepresentation->setShape(pxikVTKUIWidgetAbstractRepresentation::Circle);
+	buttonRepresentation->SetFrameVisible(1);
+	//buttonRepresentation->BuildRepresentation();
+
+
+	m_pxikVTKUIButtonWidget =
+		vtkSmartPointer<pxikVTKUIButtonWidget>::New();
+	m_pxikVTKUIButtonWidget->SetInteractor(m_vtkInteractor);
+	m_pxikVTKUIButtonWidget->SetRepresentation(buttonRepresentation);
+
+
+	// Place the widget. Must be done after a render so that the
+	// viewport is defined.
+	// Here the widget placement is in normalized display coordinates
+	vtkSmartPointer<vtkCoordinate> upperRight =
+		vtkSmartPointer<vtkCoordinate>::New();
+	upperRight->SetCoordinateSystemToNormalizedDisplay();
+	upperRight->SetValue(1.0, 1.0);
+
+	double bds[6];
+	double sz = 50.0;
+	bds[0] = upperRight->GetComputedDisplayValue(m_vtkRenderer)[0] - sz - 10;
+	bds[1] = bds[0] + sz;
+	bds[2] = upperRight->GetComputedDisplayValue(m_vtkRenderer)[1] - sz - 10;
+	bds[3] = bds[2] + sz;
+	bds[4] = bds[5] = 0.0;
+
+	// Scale to 1, default is .5
+	buttonRepresentation->SetPlaceFactor(1);
+	buttonRepresentation->PlaceWidget(bds);
+
+	m_pxikVTKUIButtonWidget->On();
+}
