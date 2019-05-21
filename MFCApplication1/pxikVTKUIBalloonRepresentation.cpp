@@ -540,6 +540,7 @@ int pxikVTKUIBalloonRepresentation::RenderOverlay(vtkViewport *v)
 int pxikVTKUIBalloonRepresentation::
 ComputeInteractionState(int X, int Y, int)
 {
+	//TODO: 선택 범위 지정
 	// Is it in the text region or the image region?
 	double x0[3], x2[3];
 	int origin[2] = { 0, 0 };
@@ -548,6 +549,23 @@ ComputeInteractionState(int X, int Y, int)
 		origin[0] = (this->Renderer->GetOrigin())[0];
 		origin[1] = (this->Renderer->GetOrigin())[1];
 	}
+	if (this->m_frameVisible)
+	{
+		this->FramePoints->GetPoint(0, x0);
+		this->FramePoints->GetPoint(0, x2);
+
+		for (int i = 0; i < 2; ++i)
+		{
+			x0[i] += origin[i];
+			x2[i] += origin[i];
+		}
+		if (x0[0] <= X && X <= x2[0])
+		{
+			if( )
+		}
+
+	}
+
 	if (this->ImageVisible)
 	{
 		this->TexturePoints->GetPoint(0, x0);
